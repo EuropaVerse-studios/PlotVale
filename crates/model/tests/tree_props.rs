@@ -1,12 +1,12 @@
-//! Property test: sequenze casuali di operazioni non rompono mai gli invarianti.
+//! Property test: random operation sequences never break the invariants.
 //!
-//! Qualunque cosa faccia l'utente nel binder — anche la più strana — l'albero deve
-//! restare coerente, o l'operazione deve fallire con errore (mai panic, mai cicli).
+//! Whatever the user does in the binder — even the weirdest thing — the tree must
+//! stay consistent, or the operation must fail with an error (never panic, never cycles).
 
-use proptest::prelude::*;
 use plotvale_model::{NodeId, NodeKind, Tree};
+use proptest::prelude::*;
 
-/// Un'operazione casuale applicabile a un albero di prova.
+/// A random operation applicable to a test tree.
 #[derive(Clone, Debug)]
 enum Op {
     Create { parent_idx: usize, kind: u8 },
@@ -110,9 +110,9 @@ proptest! {
         for op in &ops {
             apply(&mut tree, op, &mut counter);
             tree.check_invariants()
-                .expect("invarianti violati dopo una sequenza di operazioni lecite");
+                .expect("invariants violated after a sequence of legal ops");
         }
-        // Pulizia finale: tutto ciò che resta deve essere eliminabile senza errori.
+        // Final cleanup: everything left must be deletable without errors.
         let trash_children = tree.children_of(tree.trash).unwrap();
         for child in trash_children {
             tree.delete_permanently(child).unwrap();
@@ -127,11 +127,11 @@ proptest! {
         for op in &ops {
             apply(&mut tree, op, &mut counter);
         }
-        // Ogni elemento nel cestino deve essere ripristinabile.
+        // Every trashed item must be restorable.
         let trash_children = tree.children_of(tree.trash).unwrap();
         for child in trash_children {
             tree.restore(child)
-                .expect("un elemento nel cestino deve essere sempre ripristinabile");
+                .expect("a trashed item must always be restorable");
             assert!(!tree.is_in_trash(child));
         }
         tree.check_invariants().unwrap();

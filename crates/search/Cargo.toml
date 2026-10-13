@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Ricerca full-text nel progetto: indice, regex, ricerche salvate"
+description = "Project full-text search: index, regex, saved queries"
 
 [dependencies]
 plotvale-model.workspace = true

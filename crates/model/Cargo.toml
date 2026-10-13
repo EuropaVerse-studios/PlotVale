@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Modello dati di PlotVale: albero, documenti, schede, obiettivi"
+description = "PlotVale data model: tree, documents, sheets, goals"
 
 [dependencies]
 serde.workspace = true

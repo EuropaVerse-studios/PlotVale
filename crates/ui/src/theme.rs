@@ -1,9 +1,9 @@
-//! Tema scuro PlotVale: i colori del logo applicati a egui.
+//! PlotVale dark theme: the logo colors applied to egui.
 //!
-//! Nero caldo di sfondo, crema per i testi, corallo per accenti, selezioni e
-//! progressi. Spacing generoso e angoli morbidi per un aspetto moderno.
+//! Warm black background, cream text, coral for accents, selections, and
+//! progress. Generous spacing and soft corners for a modern look.
 
-use egui::{Color32, Stroke, Style, Visuals, style::Widgets};
+use egui::{Color32, CornerRadius, Margin, Stroke, Style, Visuals, style::Widgets};
 
 use crate::brand::palette;
 
@@ -11,7 +11,27 @@ fn rgb(c: [u8; 3]) -> Color32 {
     Color32::from_rgb(c[0], c[1], c[2])
 }
 
-/// Visuals del brand (tema scuro).
+/// Brand coral accent.
+pub fn accent() -> Color32 {
+    rgb(palette::ACCENT)
+}
+
+/// Text cream.
+pub fn cream() -> Color32 {
+    rgb(palette::CREAM)
+}
+
+/// Brand-bordered card to highlight content (corkboard, panels).
+pub fn card_frame(style: &egui::Style) -> egui::Frame {
+    let mut frame = egui::Frame::group(style);
+    frame.fill = rgb(palette::CARD);
+    frame.stroke = Stroke::new(1.0, rgb(palette::ACCENT_DEEP));
+    frame.corner_radius = CornerRadius::same(10);
+    frame.inner_margin = Margin::same(10);
+    frame
+}
+
+/// Brand visuals (dark theme).
 pub fn brand_visuals() -> Visuals {
     let accent = rgb(palette::ACCENT);
     let accent_light = rgb(palette::ACCENT_LIGHT);
@@ -26,7 +46,7 @@ pub fn brand_visuals() -> Visuals {
         bg_fill: bg,
         weak_bg_fill: bg,
         bg_stroke: Stroke::new(1.0, faint),
-        rounding: egui::Rounding::same(8.0),
+        corner_radius: CornerRadius::same(8),
         fg_stroke: Stroke::new(1.5, fg),
         expansion: 1.0,
     };
@@ -43,6 +63,8 @@ pub fn brand_visuals() -> Visuals {
         window_fill: panel,
         panel_fill: panel,
         window_stroke: Stroke::new(1.0, accent_deep),
+        window_corner_radius: CornerRadius::same(10),
+        menu_corner_radius: CornerRadius::same(8),
         widgets: Widgets {
             noninteractive: widget(card, cream),
             inactive: widget(Color32::from_rgb(0x33, 0x2A, 0x23), cream),
@@ -60,13 +82,20 @@ pub fn brand_visuals() -> Visuals {
     }
 }
 
-/// Stile moderno: spacing e rounding applicati una volta all'avvio.
+/// Modern style: brand visuals + spacing, applied once at startup.
 pub fn brand_style() -> Style {
-    let mut style = Style::default();
-    style.visuals = brand_visuals();
+    let mut style = Style {
+        visuals: brand_visuals(),
+        ..Default::default()
+    };
     style.spacing.item_spacing = egui::vec2(8.0, 6.0);
     style.spacing.button_padding = egui::vec2(10.0, 6.0);
     style.spacing.indent = 20.0;
-    style.spacing.scroll_bar_width = 10.0;
     style
+}
+
+/// Applies the brand theme to the context (forced dark theme, full style).
+pub fn apply_theme(ctx: &egui::Context) {
+    ctx.set_theme(egui::ThemePreference::Dark);
+    ctx.set_style_of(egui::Theme::Dark, brand_style());
 }

@@ -1,27 +1,31 @@
 # CHANGELOG.md
 
-Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.0.0/).
+Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.2.0] — 2026-10-13
 
-### Cambiato
-- Rinominato tutto il progetto da StoryCraft a **PlotVale** (crate `plotvale-*`, binari `plotvale` / `plotvale-cli`, formato **`.plotvale`**).
-- Il formato rompe la compatibilità con la 0.1.0 mai rilasciata: voce manifest `plotvale.json`, estensione `.plotvale`. I vecchi file vengono rifiutati con errore chiaro.
-- Nuovo tema scuro brand (corallo su nero caldo, testi crema) dai colori del logo; interfaccia modernizzata con card, spacing e empty-state.
-- Logo negli asset (`assets/logo.png`, `assets/banner.png`): icona della finestra e schermata di benvenuto.
+### Changed
+- Renamed the whole project from StoryCraft to **PlotVale** (crates `plotvale-*`,
+  binaries `plotvale` / `plotvale-cli`, **`.plotvale`** format).
+- The format breaks compatibility with the unreleased 0.1.0: manifest entry
+  `plotvale.json`, `.plotvale` extension. Old files are rejected with a clear error.
+- New brand dark theme (coral on warm black, cream text) taken from the logo colors;
+  modernized interface with cards, spacing, and empty states.
+- Logo in assets (`assets/logo.png`, `assets/banner.png`): window icon and
+  welcome screen.
 
 ## [0.1.0] — 2026-10-13
 
-### Aggiunto
-- Workspace Cargo con 6 crate (`model`, `project`, `search`, `compile`, `export`, `ui`),
-  2 app (`plotvale`, `plotvale-cli`) e `xtask`.
-- Formato `.plotvale` v1 (specifica in `docs/format-spec.md`): zip di Markdown + JSON
-  con ID stabili, salvataggio atomico, backup a rotazione, recupero dopo crash,
-  modalità cartella per Git/sync.
-- Interfaccia grafica (eframe/egui): binder, editor con stile Markdown inline,
-  inspector, cartellone, ricerca globale, snapshot, obiettivi, statistiche, export.
-- Interfaccia bilingue italiano/inglese con test di parità delle chiavi.
+### Added
+- Cargo workspace with 6 crates (`model`, `project`, `search`, `compile`, `export`,
+  `ui`), 2 apps (`plotvale`, `plotvale-cli`), and `xtask`.
+- `.plotvale` format v1 (spec in `docs/format-spec.md`): zip of Markdown + JSON
+  with stable IDs, atomic saves, rotating backups, crash recovery,
+  folder mode for Git/sync.
+- Graphical interface (eframe/egui): binder, editor with inline Markdown styling,
+  inspector, corkboard, global search, snapshots, goals, statistics, export.
+- Bilingual English/Italian interface with key-parity tests.
 - CLI: `new`, `verify`, `stats`, `export` (md/txt/html/docx/epub).
-- Export: TXT, Markdown, HTML, DOCX, EPUB da un unico motore di composizione.
-- Suite di test: unit, proptest (albero, buffer), golden file sugli export, crash test.
-- CI su Windows/macOS/Linux (fmt, clippy, test).
+- Export: TXT, Markdown, HTML, DOCX, EPUB from a single composition engine.
+- Test suite: unit, proptests (tree, buffer), export golden files, crash test.
+- CI on Windows/macOS/Linux (fmt, clippy, test).

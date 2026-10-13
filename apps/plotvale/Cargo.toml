@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "PlotVale: l'anti-Scrivener libero (interfaccia grafica)"
+description = "PlotVale: the free anti-Scrivener (graphical interface)"
 
 [[bin]]
 name = "plotvale"

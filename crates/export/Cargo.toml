@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Renderer di esportazione: TXT, Markdown, HTML, DOCX, EPUB"
+description = "Export renderers: TXT, Markdown, HTML, DOCX, EPUB"
 
 [dependencies]
 plotvale-model.workspace = true

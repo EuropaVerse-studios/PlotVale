@@ -1,7 +1,7 @@
-//! PlotVale a riga di comando: crea, verifica, statistiche, esporta.
+//! PlotVale on the command line: create, verify, stats, export.
 //!
-//! Stesso core della GUI, senza finestra: utile per automazioni, CI e per
-//! controllare l'integrità dei propri progetti.
+//! Same core as the GUI, without a window: handy for automation, CI, and
+//! checking the integrity of your projects.
 
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -13,49 +13,49 @@ use plotvale_project::{SaveOptions, open_any, save_any};
 
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// PlotVale da terminale.
+/// PlotVale from the terminal.
 #[derive(Debug, Parser)]
 #[command(name = "plotvale-cli", version = APP_VERSION)]
 struct Cli {
-    /// Comando da eseguire.
+    /// Command to run.
     #[command(subcommand)]
     command: Command,
 }
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Crea un nuovo progetto.
+    /// Creates a new project.
     New {
-        /// Percorso del file .plotvale da creare.
+        /// Path of the .plotvale file to create.
         path: PathBuf,
-        /// Titolo dell'opera.
-        #[arg(long, default_value = "Senza titolo")]
+        /// Title of the work.
+        #[arg(long, default_value = "Untitled")]
         title: String,
-        /// Autore.
+        /// Author.
         #[arg(long, default_value = "")]
         author: String,
     },
-    /// Verifica l'integrità di un progetto.
+    /// Verifies a project's integrity.
     Verify {
-        /// Percorso del progetto (file o cartella).
+        /// Project path (file or folder).
         path: PathBuf,
     },
-    /// Mostra le statistiche del progetto.
+    /// Shows project statistics.
     Stats {
-        /// Percorso del progetto (file o cartella).
+        /// Project path (file or folder).
         path: PathBuf,
     },
-    /// Esporta il manoscritto.
+    /// Exports the manuscript.
     Export {
-        /// Percorso del progetto (file o cartella).
+        /// Project path (file or folder).
         path: PathBuf,
-        /// Formato: md, txt, html, docx, epub.
+        /// Format: md, txt, html, docx, epub.
         #[arg(long, default_value = "md")]
         format: String,
-        /// File di output.
+        /// Output file.
         #[arg(long)]
         out: PathBuf,
-        /// Profilo: manoscritto, beta-reader, ebook, fedelta.
+        /// Profile: manoscritto, beta-reader, ebook, fedelta.
         #[arg(long, default_value = "manoscritto")]
         profile: String,
     },
@@ -66,7 +66,7 @@ fn main() {
     let code = match run(cli) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("plotvale-cli: errore: {e}");
+            eprintln!("plotvale-cli: error: {e}");
             1
         }
     };
@@ -81,25 +81,25 @@ fn run(cli: Cli) -> Result<(), String> {
             author,
         } => {
             if path.exists() {
-                return Err(format!("esiste già: {}", path.display()));
+                return Err(format!("already exists: {}", path.display()));
             }
             let mut project = Project::new(&title, &author, APP_VERSION);
             let profiles = plotvale_compile::ProfilesFile::default();
             save_any(&mut project, &profiles, &path, &SaveOptions::default())
-                .map_err(|e| format!("creazione non riuscita: {e}"))?;
-            println!("creato {}", path.display());
+                .map_err(|e| format!("creation failed: {e}"))?;
+            println!("created {}", path.display());
             Ok(())
         }
         Command::Verify { path } => {
-            let opened = open_any(&path).map_err(|e| format!("progetto non valido: {e}"))?;
+            let opened = open_any(&path).map_err(|e| format!("invalid project: {e}"))?;
             opened
                 .project
                 .tree
                 .check_invariants()
-                .map_err(|e| format!("struttura incoerente: {e}"))?;
+                .map_err(|e| format!("inconsistent tree: {e}"))?;
             let docs = opened.project.docs.len();
             println!(
-                "OK: {} ({} parole, {} documenti, {} snapshot)",
+                "OK: {} ({} words, {} documents, {} snapshots)",
                 path.display(),
                 opened.project.total_words(),
                 docs,
@@ -108,11 +108,11 @@ fn run(cli: Cli) -> Result<(), String> {
             Ok(())
         }
         Command::Stats { path } => {
-            let opened = open_any(&path).map_err(|e| format!("apertura non riuscita: {e}"))?;
+            let opened = open_any(&path).map_err(|e| format!("open failed: {e}"))?;
             let project = &opened.project;
-            println!("Titolo: {}", project.manifest.title);
-            println!("Autore: {}", project.manifest.author);
-            println!("Parole totali: {}", project.total_words());
+            println!("Title: {}", project.manifest.title);
+            println!("Author: {}", project.manifest.author);
+            println!("Total words: {}", project.total_words());
             let mut docs = 0;
             let mut chars = 0;
             for id in project.tree.ids() {
@@ -122,8 +122,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 }
                 chars += count_words(text).characters_no_spaces;
             }
-            println!("Documenti con testo: {docs}");
-            println!("Caratteri (spazi esclusi): {chars}");
+            println!("Documents with text: {docs}");
+            println!("Characters (no spaces): {chars}");
             for child in project
                 .tree
                 .children_of(project.tree.draft_root)
@@ -134,7 +134,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     .get(child)
                     .map(|n| n.title.clone())
                     .unwrap_or_default();
-                println!("  {name}: {} parole", project.subtree_words(child));
+                println!("  {name}: {} words", project.subtree_words(child));
             }
             Ok(())
         }
@@ -144,7 +144,7 @@ fn run(cli: Cli) -> Result<(), String> {
             out,
             profile,
         } => {
-            let opened = open_any(&path).map_err(|e| format!("apertura non riuscita: {e}"))?;
+            let opened = open_any(&path).map_err(|e| format!("open failed: {e}"))?;
             let format: ExportFormat = format.parse().map_err(|e: String| e)?;
             let mut prof = match profile.as_str() {
                 "beta-reader" => CompileProfile::beta_reader(),
@@ -157,10 +157,10 @@ fn run(cli: Cli) -> Result<(), String> {
             }
             let ids = expand_selection(&opened.project, &[]);
             let compiled =
-                compile(&opened.project, &ids, &prof).map_err(|e| format!("composizione: {e}"))?;
+                compile(&opened.project, &ids, &prof).map_err(|e| format!("compile: {e}"))?;
             export_to_file(&compiled, format, &out)
-                .map_err(|e| format!("esportazione non riuscita: {e}"))?;
-            println!("esportato {}", out.display());
+                .map_err(|e| format!("export failed: {e}"))?;
+            println!("exported {}", out.display());
             Ok(())
         }
     }

@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Lettura e scrittura del formato .plotvale: zip, salvataggio atomico, backup"
+description = "PlotVale format I/O: zip, atomic saves, backups"
 
 [dependencies]
 plotvale-model.workspace = true

@@ -1,15 +1,15 @@
-//! Test del formato: round-trip identico, ZIP troncato, backup, recupero crash.
+//! Format tests: identical round-trip, truncated ZIP, backups, crash recovery.
 //!
-//! La promessa di PlotVale è non perdere mai il testo: questi test la verificano.
+//! PlotVale's promise is to never lose text: these tests verify it.
 
-use std::fs;
-use std::path::PathBuf;
 use plotvale_compile::ProfilesFile;
 use plotvale_model::{NodeKind, Project};
 use plotvale_project::{
     SaveOptions, backup_dir, find_recovery, open_any, open_zip, save_any, save_folder, save_zip,
     tmp_sibling,
 };
+use std::fs;
+use std::path::PathBuf;
 
 fn sample() -> (Project, ProfilesFile, String) {
     let mut project = Project::new("Romanzo di prova", "Autrice", "0.1.0-test");
@@ -19,7 +19,7 @@ fn sample() -> (Project, ProfilesFile, String) {
         .create(cap, NodeKind::Scene, "Scena 2")
         .unwrap();
     project.set_doc_text(s2, "Seconda scena con **grassetto** e [[nota: segreta]].");
-    // Uno snapshot sulla prima scena.
+    // One snapshot on the first scene.
     let s1 = project.tree.children_of(cap).unwrap()[0];
     let text = project.doc_text(s1).to_string();
     let snap_id = plotvale_model::NodeId::new().to_string();
@@ -30,7 +30,7 @@ fn sample() -> (Project, ProfilesFile, String) {
         label: "prima stesura".to_string(),
     });
     project.snapshot_texts.insert(snap_id.to_string(), text);
-    // Una scheda personaggio collegata all'albero.
+    // One character sheet linked to the tree.
     let sheet = project
         .tree
         .create(project.tree.draft_root, NodeKind::CharacterSheet, "Elena")
@@ -68,7 +68,7 @@ fn zip_roundtrip_is_identical() {
     assert_eq!(opened.project.snapshots.len(), 1);
     assert_eq!(opened.project.sheets.characters.len(), 1);
     assert_eq!(opened.profiles, profiles);
-    // Il testo delle snapshot sopravvive al viaggio.
+    // Snapshot text survives the trip.
     let s1 = opened
         .project
         .tree
@@ -79,7 +79,7 @@ fn zip_roundtrip_is_identical() {
         opened.project.snapshot_texts[snap_id.as_str()],
         opened.project.doc_text(s1)
     );
-    // Secondo giro: stabile.
+    // Second round: stable.
     let path2 = path.with_extension("plotvale2");
     let mut again = opened.project.clone();
     save_zip(
@@ -98,7 +98,7 @@ fn truncated_zip_is_an_error_not_a_panic() {
     let (mut project, profiles, _snap_id) = sample();
     let path = temp_path("truncated");
     save_zip(&mut project, &profiles, &path, &SaveOptions::default()).unwrap();
-    // Tronca il file a metà: deve dare errore, mai panic.
+    // Truncate the file halfway: must error, never panic.
     let bytes = fs::read(&path).unwrap();
     fs::write(&path, &bytes[..bytes.len() / 2]).unwrap();
     assert!(open_zip(&path).is_err());
@@ -107,7 +107,7 @@ fn truncated_zip_is_an_error_not_a_panic() {
 #[test]
 fn missing_entry_is_an_error() {
     let path = temp_path("missing");
-    // ZIP valido ma senza le voci obbligatorie.
+    // Valid ZIP but missing the required entries.
     let file = fs::File::create(&path).unwrap();
     let mut zip = zip::ZipWriter::new(file);
     zip.start_file("testi/x.md", zip::write::SimpleFileOptions::default())
@@ -141,10 +141,10 @@ fn backups_rotate_and_recovery_detects_tmp() {
         .filter_map(|e| e.ok())
         .collect();
     assert_eq!(backups.len(), 3, "rotazione dei backup");
-    // Simula un crash: .tmp più recente del progetto.
+    // Simulate a crash: .tmp newer than the project.
     let tmp = tmp_sibling(&path);
     fs::copy(&path, &tmp).unwrap();
-    // Tocca il tmp per renderlo più recente.
+    // Touch the tmp to make it newer.
     let future = std::time::SystemTime::now() + std::time::Duration::from_secs(60);
     let _ = filetime_set(&tmp, future);
     assert_eq!(find_recovery(&path), Some(tmp));
@@ -163,7 +163,7 @@ fn folder_mode_roundtrip() {
     let opened = open_any(&dir).unwrap();
     assert_eq!(opened.project.total_words(), project.total_words());
     assert_eq!(opened.project.snapshots.len(), 1);
-    // E si può risalvare sopra senza errori.
+    // And it can be re-saved over without errors.
     let mut again = opened.project.clone();
     save_any(&mut again, &opened.profiles, &dir, &SaveOptions::default()).unwrap();
 }

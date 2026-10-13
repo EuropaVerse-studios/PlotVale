@@ -1,74 +1,86 @@
-# PlotVale — l'anti-Scrivener libero, per scrittori veri
+![PlotVale](assets/banner.png)
 
-**PlotVale** è un programma gratuito e open source per organizzare e scrivere romanzi,
-racconti e testi lunghi: l'alternativa libera a Scrivener, scritta in **Rust puro**,
-pensata anche per **scrittori amatoriali** e per chi scrive in **italiano**.
+# PlotVale — the free anti-Scrivener, for real writers
 
-> Progetto indipendente della community, **non affiliato all'ArtCraft team**.
-> Ne segue le convenzioni (Rust puro, licenza `MIT OR Apache-2.0`, naming `*Craft`)
-> per restare compatibile con l'ecosistema. Vedi `ATTRIBUTION.md`.
+[![CI](https://github.com/plotvale/plotvale/actions/workflows/ci.yml/badge.svg)](https://github.com/plotvale/plotvale/actions/workflows/ci.yml)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 
-## Perché un altro programma di scrittura?
+**PlotVale** is a free and open-source program for organizing and writing novels,
+short stories, and long-form texts: a libre alternative to Scrivener, written in
+**pure Rust**, designed for **hobbyist writers** as well as seasoned novelists.
 
-- **Gratis e open source**, per sempre. Nessun abbonamento, nessuna edizione "pro" a pagamento.
-- **Zero lock-in**: il tuo romanzo è uno zip di file di testo (Markdown + JSON) con
-  [specifica pubblica](docs/format-spec.md). Lo apri anche fra 20 anni con il Blocco note.
-- **Snapshot che si possono ripristinare** (sì, davvero), backup automatici, recupero dopo crash.
-- **Editing continuo** di più scene selezionate, cartellone con schede vive, obiettivi di
-  scrittura, esportazione in TXT / Markdown / HTML / DOCX / EPUB.
-- **Interfaccia in italiano e inglese**, tipografia italiana (virgolette «», trattino —),
-  conteggio parole secondo le regole della lingua.
+> An independent community project, **not affiliated with the ArtCraft team**.
+> It follows the suite's conventions (pure Rust, `MIT OR Apache-2.0` license,
+> `*Craft` naming) to stay compatible with the ecosystem. See `ATTRIBUTION.md`.
 
-## Stato del progetto
+## Why another writing app?
 
-Versione **0.1.0** — fondamenta funzionanti (vedi `ROADMAP.md` per le tappe):
+- **Free and open source, forever.** No subscriptions, no paid "pro" edition.
+- **Zero lock-in**: your novel is a zip of plain-text files (Markdown + JSON) with
+  a [public specification](docs/format-spec.md). You can still open it 20 years
+  from now with Notepad.
+- **Snapshots you can actually restore**, automatic backups, crash recovery.
+- **Scrivenings-style continuous editing** across scenes, a live corkboard,
+  writing goals, export to TXT / Markdown / HTML / DOCX / EPUB.
+- **Bilingual interface (English + Italian)**, Italian typography («», —),
+  language-aware word counting.
 
-- [x] Modello dati, formato `.plotvale`, salvataggio atomico, backup, recupero crash
-- [x] Binder gerarchico, editor con stile Markdown inline, inspector, cartellone
-- [x] Ricerca globale, snapshot, obiettivi, statistiche
-- [x] Export TXT/Markdown/HTML/DOCX/EPUB, CLI `plotvale-cli`
-- [ ] PDF impaginato (Typst), controllo ortografico, import da Scrivener
+## Project status
 
-## Compilare ed eseguire
+Version **0.2.0** — working foundations (see `ROADMAP.md` for milestones):
 
-Serve Rust stabile ≥ 1.90 ([installazione](https://rustup.rs/)).
+- [x] Data model, `.plotvale` format, atomic saves, backups, crash recovery
+- [x] Hierarchical binder, editor with inline Markdown styling, inspector, corkboard
+- [x] Global search, snapshots, goals, statistics
+- [x] TXT/Markdown/HTML/DOCX/EPUB export, `plotvale-cli`
+- [ ] Typeset PDF (Typst), spell checking, Scrivener import
+
+## Quick start
+
+You need stable Rust ≥ 1.90 ([install via rustup](https://rustup.rs/)).
 
 ```sh
-# interfaccia grafica
+# graphical interface
 cargo run -p plotvale
 
-# riga di comando: crea, verifica, statistiche, esporta
-cargo run -p plotvale-cli -- new "Il mio romanzo.plotvale" --title "Il mio romanzo"
-cargo run -p plotvale-cli -- stats "Il mio romanzo.plotvale"
-cargo run -p plotvale-cli -- verify "Il mio romanzo.plotvale"
-cargo run -p plotvale-cli -- export "Il mio romanzo.plotvale" --format epub --out romanzo.epub
+# command line: create, verify, stats, export
+cargo run -p plotvale-cli -- new "My novel.plotvale" --title "My novel"
+cargo run -p plotvale-cli -- stats "My novel.plotvale"
+cargo run -p plotvale-cli -- verify "My novel.plotvale"
+cargo run -p plotvale-cli -- export "My novel.plotvale" --format epub --out novel.epub
 
-# controlli qualità
+# quality gates (also enforced by CI on Windows, macOS, Linux)
 cargo fmt --check
-cargo clippy --workspace -- -D warnings
+cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo run -p xtask -- check-locales
 ```
 
-Windows, macOS e Linux sono supportati. La CI compila tutti e tre.
+New to PlotVale? Read the [user manual](docs/user-manual.md) (5-minute tour included).
+Curious about the file format? Start from the [format specification](docs/format-spec.md).
 
-## Struttura del repository
+## Repository layout
 
 ```
-crates/model/     modello dati: albero, documenti, schede, obiettivi, conteggio parole
-crates/project/   lettura/scrittura .plotvale, salvataggio atomico, backup, migrazioni
-crates/search/    indice full-text, regex, ricerche salvate
-crates/compile/   motore di composizione: selezione → sezioni → blocchi
-crates/export/    renderer TXT/Markdown/HTML/DOCX/EPUB
-crates/ui/        interfaccia egui: binder, editor, cartellone, inspector
-apps/plotvale/      programma con finestra
-apps/plotvale-cli/  programma a riga di comando
-xtask/            automazioni (es. verifica parità delle traduzioni)
-locales/          stringhe dell'interfaccia (it.json, en.json)
-docs/             specifica del formato, architettura, manuale utente
+crates/model/     data model: tree, documents, sheets, goals, word counting
+crates/project/   .plotvale reading/writing, atomic saves, backups, migrations
+crates/search/    full-text index, regex, saved queries
+crates/compile/   composition engine: selection → sections → blocks
+crates/export/    TXT/Markdown/HTML/DOCX/EPUB renderers
+crates/ui/        egui interface: binder, editor, corkboard, inspector
+apps/plotvale/      desktop app (window)
+apps/plotvale-cli/  command-line app
+xtask/            automation (e.g. translation parity check)
+locales/          interface strings (en.json, it.json) — the app stays bilingual
+docs/             format spec, architecture, user manual
 ```
 
-## Licenza
+## Contributing
 
-Doppia licenza a tua scelta: **MIT** oppure **Apache-2.0**
-(`LICENSE-MIT`, `LICENSE-APACHE`). Vedi `NOTICE` e `ATTRIBUTION.md`.
+Contributions are welcome! Start from `CONTRIBUTING.md`, then `AGENTS.md` for the
+project rules. Please open an issue before a pull request (typos and docs excepted).
+
+## License
+
+Dual-licensed at your choice: **MIT** or **Apache-2.0**
+(`LICENSE-MIT`, `LICENSE-APACHE`). See `NOTICE` and `ATTRIBUTION.md`.

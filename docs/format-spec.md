@@ -1,40 +1,44 @@
-# Specifica del formato `.plotvale` — v1 (`schema_version = 1`)
+# `.plotvale` format specification — v1 (`schema_version = 1`)
 
-Un progetto PlotVale è un archivio **ZIP** (compressione deflate, Zip64 ammesso)
-oppure una **cartella** con la stessa struttura interna ("modalità cartella").
-Tutti i testi sono **UTF-8**. Questa specifica è pubblica: chiunque può leggere e
-scrivere progetti PlotVale senza il nostro programma.
+A PlotVale project is a **ZIP** archive (deflate compression, Zip64 allowed)
+or a **folder** with the same internal layout ("folder mode").
+All texts are **UTF-8**. This specification is public: anyone can read and
+write PlotVale projects without our program.
 
-## Struttura
+## Layout
 
 ```
-plotvale.json            manifest (obbligatorio)
-struttura.json             albero dei nodi (obbligatorio)
-metadati.json              keyword globali, campi personalizzati, note (obbligatorio)
-obiettivi.json             obiettivi di scrittura (obbligatorio)
-testi/<ULID>.md            testo di un documento (uno per nodo testuale)
-schede/personaggi.json     array di schede personaggio
-schede/luoghi.json         array di schede luogo
-snapshot/<ULID-doc>/<id>-<etichetta>.md   versioni salvate
-composizione/profili.json  profili di esportazione
-ricerca/<nome-file>        allegati di ricerca (opzionali)
+plotvale.json            manifest (required)
+struttura.json           node tree (required)
+metadati.json            global keywords, custom fields, notes (required)
+obiettivi.json           writing goals (required)
+testi/<ULID>.md          one document's text (one per textual node)
+schede/personaggi.json   character-sheet array
+schede/luoghi.json       location-sheet array
+snapshot/<ULID-doc>/<id>-<label>.md   saved versions
+composizione/profili.json  export profiles
+ricerca/<file-name>      research attachments (optional)
 ```
 
-## Regole
+> Internal entry names (`struttura.json`, `testi/`, …) are frozen for v1
+> compatibility and stay as they are; only this documentation is in English.
 
-- Gli ID sono **ULID** (stringhe Crockford base32, es. `01J9Z…`). Il nome del file in
-  `testi/` è l'ID del nodo: rinominare una scena non sposta il file.
-- L'albero in `struttura.json` contiene i nodi con `parent`/`children`; le radici sono
-  sempre tre: manoscritto, ricerca, cestino.
-- I nodi con `kind` testuale (`scene`, `note`, `research_item`, `character`,
-  `location`) possono avere un file in `testi/`; se manca, il testo è vuoto.
-- I testi sono **Markdown** con due sole estensioni documentate:
-  - `[[nota: testo]]` — annotazione inline (non fa parte del manoscritto);
-  - `[^1]` e `[^1]: testo` — note a piè di pagina.
-- I nomi dei file snapshot usano solo `[A-Za-z0-9_-]`; data e ora in RFC 3339 nei JSON.
-- Scrittura **atomica**: si scrive sempre un file temporaneo fratello
-  (`<nome>.plotvale.tmp`) e lo si rinomina sopra l'originale solo a scrittura
-  completata e verificata. Un `.tmp` più recente del progetto indica un crash:
-  va proposto il recupero, mai sovrascritto in silenzio.
-- Compatibilità: lettori che trovano `schema_version` maggiore di quello supportato
-  devono rifiutare l'apertura con errore esplicito, mai tentare di "indovinare".
+## Rules
+
+- IDs are **ULIDs** (Crockford base32 strings, e.g. `01J9Z…`). The file name in
+  `testi/` is the node's ID: renaming a scene never moves the file.
+- The tree in `struttura.json` holds nodes with `parent`/`children`; there are
+  always three roots: manuscript, research, trash.
+- Nodes with a textual `kind` (`scene`, `note`, `research_item`, `character`,
+  `location`) may have a file in `testi/`; if missing, the text is empty.
+- Texts are **Markdown** with only two documented extensions:
+  - `[[note: text]]` — inline annotation (not part of the manuscript);
+    `[[nota: text]]` is accepted as an alias;
+  - `[^1]` and `[^1]: text` — footnotes.
+- Snapshot file names use only `[A-Za-z0-9_-]`; dates and times in JSON are RFC 3339.
+- **Atomic** writes: always write a sibling temporary file
+  (`<name>.plotvale.tmp`) and rename it over the original only once the write
+  is complete and verified. A `.tmp` newer than the project means a crash:
+  offer recovery, never silently overwrite.
+- Compatibility: readers finding a `schema_version` higher than the supported one
+  must refuse to open with an explicit error, never try to "guess".

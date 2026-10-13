@@ -1,7 +1,7 @@
-//! PlotVale — l'anti-Scrivener libero (interfaccia grafica).
+//! PlotVale — the free anti-Scrivener (graphical interface).
 //!
-//! Punto di ingresso: apre la finestra e delega tutto a `plotvale-ui`.
-//! Non contiene logica: per automazioni vedi `plotvale-cli`.
+//! Entry point: opens the window and delegates everything to `plotvale-ui`.
+//! No logic here: for automation see `plotvale-cli`.
 
 fn main() -> eframe::Result<()> {
     eframe::run_native(

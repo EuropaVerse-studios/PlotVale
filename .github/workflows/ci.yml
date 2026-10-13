@@ -16,11 +16,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-      - name: Formattazione
+      - name: Formatting
         run: cargo fmt --check
       - name: Lint
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
         run: cargo test --workspace
-      - name: Parita traduzioni
+      - name: Locale parity
         run: cargo run -p xtask -- check-locales

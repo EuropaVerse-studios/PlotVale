@@ -1,26 +1,47 @@
-# Rust
+# Rust build output
 /target/
 **/*.rs.bk
-Cargo.lock
-# (Cargo.lock e' voluto per i binari; qui lo ignoriamo per ora, verra' rivalutato)
+*.pdb
 
-# Editor / OS
+# NOTE: Cargo.lock is intentionally TRACKED (this workspace ships binaries:
+# apps/plotvale and apps/plotvale-cli). Do not ignore it.
+
+# IDEs and editors
 .vscode/
 .idea/
+*.iml
 *.swp
+*.swo
 *~
+*.orig
+*.rej
+
+# OS leftovers
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# File temporanei di PlotVale (mai committare)
+# PlotVale runtime leftovers (never commit these)
+/tmp/
 *.plotvale.tmp
 *-backups/
+*.plotvale.bak
 
-# Build e packaging
+# Distribution packages built locally
 /dist/
 *.msi
 *.dmg
 *.AppImage
 *.deb
-*.zip
+
+# Coverage and profiling
+lcov.info
+tarpaulin-report.*
+/coverage/
+*.profraw
+*.profdata
+
+# Local secrets (never commit)
+.env
+.env.*
+!.env.example

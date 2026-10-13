@@ -1,8 +1,8 @@
-//! Albero del progetto: la "struttura" (binder) di PlotVale.
+//! Project tree: the PlotVale outline (binder).
 //!
-//! Ogni elemento — cartella, scena, nota, scheda — è un [`Node`] con un [`NodeId`]
-//! stabile. Le operazioni (`create`, `move_node`, `move_to_trash`, …) mantengono gli
-//! invarianti e falliscono con [`TreeError`] invece di corrompere i dati.
+//! Every item — folder, scene, note, sheet — is a [`Node`] with a stable
+//! [`NodeId`]. Operations (`create`, `move_node`, `move_to_trash`, …) uphold the
+//! invariants and fail with [`TreeError`] instead of corrupting data.
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -10,46 +10,46 @@ use thiserror::Error;
 
 use crate::NodeId;
 
-/// Errori delle operazioni sull'albero. Mai un panic su input utente.
+/// Tree operation errors. Never a panic on user input.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum TreeError {
-    /// Il nodo richiesto non esiste.
-    #[error("elemento non trovato: {0}")]
+    /// The requested node does not exist.
+    #[error("item not found: {0}")]
     NotFound(NodeId),
-    /// Operazione vietata (es. spostare o eliminare una radice di sistema).
-    #[error("operazione non consentita: {0}")]
+    /// Forbidden operation (e.g. moving or deleting a system root).
+    #[error("operation not allowed: {0}")]
     Forbidden(String),
-    /// Lo spostamento creerebbe un ciclo (un nodo dentro sé stesso).
-    #[error("spostamento non possibile: creerebbe un ciclo")]
+    /// The move would create a cycle (a node inside itself).
+    #[error("cannot move: it would create a cycle")]
     WouldCycle,
 }
 
-/// Tipo di un nodo dell'albero.
+/// Kind of a tree node.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum NodeKind {
-    /// Radice del manoscritto (sistema, non spostabile né eliminabile).
+    /// Manuscript root (system, neither movable nor deletable).
     DraftRoot,
-    /// Cartella generica nel manoscritto.
+    /// Generic folder in the manuscript.
     Folder,
-    /// Unità di testo del manoscritto.
+    /// Manuscript text unit.
     Scene,
-    /// Nota libera (non esportata di default).
+    /// Free note (not exported by default).
     Note,
-    /// Radice del materiale di ricerca (sistema).
+    /// Research material root (system).
     ResearchFolder,
-    /// Allegato o appunto di ricerca.
+    /// Research attachment or memo.
     ResearchItem,
-    /// Scheda personaggio.
+    /// Character sheet.
     CharacterSheet,
-    /// Scheda luogo.
+    /// Location sheet.
     LocationSheet,
-    /// Cestino (sistema).
+    /// Trash (system).
     Trash,
 }
 
 impl NodeKind {
-    /// I nodi di sistema esistono sempre e non si possono spostare né eliminare.
+    /// System nodes always exist and cannot be moved or deleted.
     pub fn is_system(self) -> bool {
         matches!(
             self,
@@ -57,7 +57,7 @@ impl NodeKind {
         )
     }
 
-    /// I nodi che possono contenere testo modificabile.
+    /// Nodes that can hold editable text.
     pub fn can_have_text(self) -> bool {
         matches!(
             self,
@@ -70,18 +70,18 @@ impl NodeKind {
     }
 }
 
-/// Stato di avanzamento di un documento.
+/// Progress status of a document.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DocStatus {
-    /// Ancora da scrivere.
+    /// Yet to write.
     #[default]
     Todo,
-    /// Prima stesura.
+    /// First draft.
     Draft,
-    /// Rivisto.
+    /// Revised.
     Revised,
-    /// Finale.
+    /// Final.
     Final,
 }
 
@@ -89,30 +89,30 @@ fn default_true() -> bool {
     true
 }
 
-/// Metadati di un nodo: tutto ciò che non è né titolo né posizione.
+/// Metadata of a node: everything that is neither title nor position.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NodeMeta {
-    /// Stato di avanzamento.
+    /// Progress status.
     pub status: DocStatus,
-    /// Etichetta libera (es. "punto di vista: Maria").
+    /// Free label (e.g. "point of view: Mary").
     #[serde(default)]
     pub label: String,
-    /// Parole chiave per ricerca e raggruppamento.
+    /// Keywords for search and grouping.
     #[serde(default)]
     pub keywords: Vec<String>,
-    /// Riassunto mostrato nel cartellone.
+    /// Summary shown on the corkboard.
     #[serde(default)]
     pub synopsis: String,
-    /// Se `false`, il documento è escluso dall'esportazione.
+    /// If `false`, the document is excluded from export.
     #[serde(default = "default_true")]
     pub include_in_export: bool,
-    /// Colore opzionale (`#rrggbb`) per cartellone ed etichette.
+    /// Optional color (`#rrggbb`) for corkboard and labels.
     #[serde(default)]
     pub color: Option<String>,
-    /// Campi personalizzati definiti dall'utente (`metadati.json`).
+    /// User-defined custom fields (`metadati.json`).
     #[serde(default)]
     pub custom: HashMap<String, String>,
-    /// Genitore precedente alla cestinatura (per il ripristino).
+    /// Parent before trashing (for restore).
     #[serde(default)]
     pub trashed_from: Option<NodeId>,
 }
@@ -132,38 +132,38 @@ impl Default for NodeMeta {
     }
 }
 
-/// Un elemento dell'albero.
+/// One tree item.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Node {
-    /// Identificatore stabile: non cambia mai.
+    /// Stable identifier: never changes.
     pub id: NodeId,
-    /// Genitore (`None` solo per le tre radici di sistema).
+    /// Parent (`None` only for the three system roots).
     pub parent: Option<NodeId>,
-    /// Figli in ordine di visualizzazione ed esportazione.
+    /// Children in display and export order.
     pub children: Vec<NodeId>,
-    /// Tipo di elemento.
+    /// Item kind.
     pub kind: NodeKind,
-    /// Titolo visibile.
+    /// Visible title.
     pub title: String,
-    /// Metadati.
+    /// Metadata.
     #[serde(default)]
     pub meta: NodeMeta,
 }
 
-/// L'albero del progetto con le tre radici di sistema.
+/// The project tree with its three system roots.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tree {
     nodes: HashMap<NodeId, Node>,
-    /// Radice del manoscritto.
+    /// Manuscript root.
     pub draft_root: NodeId,
-    /// Radice della ricerca.
+    /// Research root.
     pub research_root: NodeId,
-    /// Cestino.
+    /// Trash.
     pub trash: NodeId,
 }
 
 impl Tree {
-    /// Crea un albero vuoto con le tre radici di sistema.
+    /// Creates an empty tree with the three system roots.
     pub fn new(draft_title: &str, research_title: &str, trash_title: &str) -> Self {
         let mut tree = Self {
             nodes: HashMap::new(),
@@ -191,32 +191,32 @@ impl Tree {
         tree
     }
 
-    /// Restituisce un nodo per id.
+    /// Returns a node by id.
     pub fn get(&self, id: NodeId) -> Result<&Node, TreeError> {
         self.nodes.get(&id).ok_or(TreeError::NotFound(id))
     }
 
-    /// Restituisce un nodo modificabile per id.
+    /// Returns a mutable node by id.
     pub fn get_mut(&mut self, id: NodeId) -> Result<&mut Node, TreeError> {
         self.nodes.get_mut(&id).ok_or(TreeError::NotFound(id))
     }
 
-    /// Numero di nodi (radici incluse).
+    /// Number of nodes (roots included).
     pub fn len(&self) -> usize {
         self.nodes.len()
     }
 
-    /// `true` se l'albero contiene solo le tre radici.
+    /// `true` if the tree holds only the three roots.
     pub fn is_empty(&self) -> bool {
         self.nodes.len() <= 3
     }
 
-    /// Itera su tutti gli id dei nodi.
+    /// Iterates over all node ids.
     pub fn ids(&self) -> impl Iterator<Item = NodeId> + '_ {
         self.nodes.keys().copied()
     }
 
-    /// Crea un figlio in coda al genitore.
+    /// Creates a child appended to the parent.
     pub fn create(
         &mut self,
         parent: NodeId,
@@ -228,7 +228,7 @@ impl Tree {
         Ok(id)
     }
 
-    /// Come [`Tree::create`], ma con id assegnato dal chiamante (utile nei test).
+    /// Like [`Tree::create`], but with a caller-assigned id (handy in tests).
     pub fn create_with_id(
         &mut self,
         id: NodeId,
@@ -242,12 +242,12 @@ impl Tree {
         let parent_node = self.get(parent)?;
         if parent_node.kind == NodeKind::Trash {
             return Err(TreeError::Forbidden(
-                "non si può creare dentro il cestino: usa Ripristina".to_string(),
+                "cannot create inside trash: use Restore".to_string(),
             ));
         }
         if kind.is_system() {
             return Err(TreeError::Forbidden(
-                "le radici di sistema non si possono creare".to_string(),
+                "system roots cannot be created".to_string(),
             ));
         }
         self.nodes.insert(
@@ -265,13 +265,13 @@ impl Tree {
         Ok(())
     }
 
-    /// Cambia il titolo di un nodo.
+    /// Renames a node.
     pub fn rename(&mut self, id: NodeId, title: &str) -> Result<(), TreeError> {
         self.get_mut(id)?.title = title.to_string();
         Ok(())
     }
 
-    /// Sposta un nodo sotto un nuovo genitore, in posizione `pos` (limitata ai figli).
+    /// Moves a node under a new parent, at position `pos` (clamped to the children).
     pub fn move_node(
         &mut self,
         id: NodeId,
@@ -281,7 +281,7 @@ impl Tree {
         let node = self.get(id)?.clone();
         if node.kind.is_system() {
             return Err(TreeError::Forbidden(
-                "le radici di sistema non si possono spostare".to_string(),
+                "system roots cannot be moved".to_string(),
             ));
         }
         self.get(new_parent)?; // esiste?
@@ -290,7 +290,7 @@ impl Tree {
         }
         if self.is_in_trash(id) || self.is_in_trash(new_parent) {
             return Err(TreeError::Forbidden(
-                "usa il cestino (Sposta nel cestino / Ripristina) per questi elementi".to_string(),
+                "use trash (Move to trash / Restore) for these items".to_string(),
             ));
         }
         if let Some(old_parent) = node.parent {
@@ -305,11 +305,11 @@ impl Tree {
         Ok(())
     }
 
-    /// Sposta un nodo di una posizione tra i fratelli (`up = true` = verso l'alto).
-    /// Restituisce `false` se è già all'estremo.
+    /// Moves a node one slot among siblings (`up = true` = upwards).
+    /// Returns `false` if already at the edge.
     pub fn reorder(&mut self, id: NodeId, up: bool) -> Result<bool, TreeError> {
         let parent = self.get(id)?.parent.ok_or_else(|| {
-            TreeError::Forbidden("le radici non si possono riordinare".to_string())
+            TreeError::Forbidden("roots cannot be reordered".to_string())
         })?;
         let siblings = &mut self.get_mut(parent)?.children;
         let Some(pos) = siblings.iter().position(|child| *child == id) else {
@@ -326,10 +326,10 @@ impl Tree {
         }
     }
 
-    /// Rientra il nodo sotto il fratello precedente. `false` se non ha un precedente.
+    /// Indents the node under the previous sibling. `false` if there is none.
     pub fn indent(&mut self, id: NodeId) -> Result<bool, TreeError> {
         let parent = self.get(id)?.parent.ok_or_else(|| {
-            TreeError::Forbidden("le radici non si possono rientrare".to_string())
+            TreeError::Forbidden("roots cannot be indented".to_string())
         })?;
         let pos = self
             .get(parent)?
@@ -346,11 +346,11 @@ impl Tree {
         Ok(true)
     }
 
-    /// Riporta il nodo al livello del genitore, subito dopo di lui.
-    /// `false` se è già al primo livello.
+    /// Outdents the node to the parent level, right after it.
+    /// `false` if already at the top level.
     pub fn outdent(&mut self, id: NodeId) -> Result<bool, TreeError> {
         let parent = self.get(id)?.parent.ok_or_else(|| {
-            TreeError::Forbidden("le radici non si possono spostare di livello".to_string())
+            TreeError::Forbidden("roots cannot be outdented".to_string())
         })?;
         let grandparent = match self.get(parent)?.parent {
             Some(grandparent) => grandparent,
@@ -366,12 +366,12 @@ impl Tree {
         Ok(true)
     }
 
-    /// Sposta un nodo (e i suoi figli) nel cestino, ricordando il genitore.
+    /// Moves a node (and its children) to trash, remembering the parent.
     pub fn move_to_trash(&mut self, id: NodeId) -> Result<(), TreeError> {
         let node = self.get(id)?.clone();
         if node.kind.is_system() {
             return Err(TreeError::Forbidden(
-                "le radici di sistema non si possono cestinare".to_string(),
+                "system roots cannot be trashed".to_string(),
             ));
         }
         if self.is_in_trash(id) {
@@ -392,17 +392,17 @@ impl Tree {
         Ok(())
     }
 
-    /// Ripristina un elemento dal cestino al genitore precedente
-    /// (o alla radice del manoscritto se non più valido).
+    /// Restores an item from trash to its previous parent
+    /// (or the manuscript root if no longer valid).
     pub fn restore(&mut self, id: NodeId) -> Result<(), TreeError> {
         if self.get(id)?.kind.is_system() {
             return Err(TreeError::Forbidden(
-                "le radici di sistema non si possono ripristinare".to_string(),
+                "system roots cannot be restored".to_string(),
             ));
         }
         if !self.is_in_trash(id) {
             return Err(TreeError::Forbidden(
-                "solo gli elementi nel cestino si possono ripristinare".to_string(),
+                "only trashed items can be restored".to_string(),
             ));
         }
         let wanted = self.get(id)?.meta.trashed_from;
@@ -424,13 +424,13 @@ impl Tree {
         Ok(())
     }
 
-    /// Elimina definitivamente un nodo e tutto il suo sottoalbero.
-    /// Restituisce gli id eliminati (per pulire testi e snapshot).
+    /// Permanently deletes a node and its whole subtree.
+    /// Returns the deleted ids (to clean texts and snapshots).
     pub fn delete_permanently(&mut self, id: NodeId) -> Result<Vec<NodeId>, TreeError> {
         let node = self.get(id)?.clone();
         if node.kind.is_system() {
             return Err(TreeError::Forbidden(
-                "le radici di sistema non si possono eliminare".to_string(),
+                "system roots cannot be deleted".to_string(),
             ));
         }
         if let Some(parent) = node.parent {
@@ -443,7 +443,7 @@ impl Tree {
         Ok(removed)
     }
 
-    /// Svuota il cestino. Restituisce gli id eliminati.
+    /// Empties the trash. Returns the deleted ids.
     pub fn empty_trash(&mut self) -> Vec<NodeId> {
         let children = self
             .get(self.trash)
@@ -458,12 +458,12 @@ impl Tree {
         removed
     }
 
-    /// Figli diretti di un nodo, in ordine.
+    /// Direct children of a node, in order.
     pub fn children_of(&self, id: NodeId) -> Result<Vec<NodeId>, TreeError> {
         Ok(self.get(id)?.children.clone())
     }
 
-    /// Tutti gli id del sottoalbero (nodo incluso), in ordine di visita.
+    /// All ids in the subtree (node included), in visit order.
     pub fn subtree_ids(&self, id: NodeId) -> Vec<NodeId> {
         let mut out = vec![id];
         let mut stack = vec![id];
@@ -478,7 +478,7 @@ impl Tree {
         out
     }
 
-    /// Titoli dalla radice al nodo (per breadcrumb e diagnostica).
+    /// Titles from the root to the node (for breadcrumbs and diagnostics).
     pub fn path_titles(&self, id: NodeId) -> Result<Vec<String>, TreeError> {
         let mut titles = vec![self.get(id)?.title.clone()];
         let mut current = self.get(id)?.parent;
@@ -491,7 +491,7 @@ impl Tree {
         Ok(titles)
     }
 
-    /// `true` se `maybe_child` è dentro il sottoalbero di `ancestor` (estremi esclusi).
+    /// `true` if `maybe_child` is inside `ancestor`'s subtree (endpoints excluded).
     pub fn is_descendant(&self, maybe_child: NodeId, ancestor: NodeId) -> bool {
         let mut current = self.nodes.get(&maybe_child).and_then(|node| node.parent);
         while let Some(parent) = current {
@@ -503,15 +503,15 @@ impl Tree {
         false
     }
 
-    /// `true` se il nodo è nel cestino.
+    /// `true` if the node is in trash.
     pub fn is_in_trash(&self, id: NodeId) -> bool {
         id == self.trash || self.is_descendant(id, self.trash)
     }
 
-    /// Verifica tutti gli invarianti: parentele coerenti, niente cicli, radici intatte,
-    /// ogni nodo raggiungibile da una radice. Usata dai test e dal comando `verify`.
+    /// Checks all invariants: consistent parentage, no cycles, intact roots,
+    /// every node reachable from a root. Used by tests and the `verify` command.
     pub fn check_invariants(&self) -> Result<(), TreeError> {
-        // 1. Le tre radici esistono, sono radici e hanno il kind giusto.
+        // 1. The three roots exist, are roots, and have the right kind.
         for (id, kind) in [
             (self.draft_root, NodeKind::DraftRoot),
             (self.research_root, NodeKind::ResearchFolder),
@@ -525,13 +525,13 @@ impl Tree {
                 return Err(TreeError::Forbidden(format!("radice alterata: {id}")));
             }
         }
-        // 2. Coerenza padre/figli in entrambe le direzioni.
+        // 2. Parent/child consistency in both directions.
         for (id, node) in &self.nodes {
             if let Some(parent) = node.parent {
                 let parent_node = self.get(parent)?;
                 if !parent_node.children.contains(id) {
                     return Err(TreeError::Forbidden(format!(
-                        "figlio orfano: {id} dichiara {parent} che non lo elenca"
+                        "orphan child: {id} names {parent}, which does not list it"
                     )));
                 }
             }
@@ -544,7 +544,7 @@ impl Tree {
                 }
             }
         }
-        // 3. Niente cicli e tutto raggiungibile: visita dalle radici.
+        // 3. No cycles and everything reachable: visit from the roots.
         let mut seen = HashSet::new();
         let mut stack = vec![self.draft_root, self.research_root, self.trash];
         while let Some(current) = stack.pop() {
@@ -558,7 +558,7 @@ impl Tree {
         }
         if seen.len() != self.nodes.len() {
             return Err(TreeError::Forbidden(
-                "esistono nodi non raggiungibili dalle radici".to_string(),
+                "there are nodes unreachable from the roots".to_string(),
             ));
         }
         Ok(())

@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Motore di composizione: selezione di nodi verso sezioni e blocchi"
+description = "Composition engine: node selection to sections and blocks"
 
 [dependencies]
 plotvale-model.workspace = true

@@ -1,42 +1,45 @@
-# ATTRIBUTION.md — ringraziamenti e licenze di terze parti
+# ATTRIBUTION.md — thanks and third-party licenses
 
-PlotVale è un progetto indipendente della community, **non affiliato né approvato
-dall'ArtCraft team** (il nome e i loghi "ArtCraft" sono marchi dei rispettivi proprietari).
-PlotVale segue le convenzioni della suite (Rust puro, licenza doppia MIT/Apache-2.0,
-naming `*Craft`) per restare compatibile con l'ecosistema, senza rivendicarne l'ufficialità.
+PlotVale is an independent community project, **not affiliated with or endorsed
+by the ArtCraft team** (the "ArtCraft" name and logos are trademarks of their
+respective owners). PlotVale follows the suite's conventions (pure Rust,
+dual MIT/Apache-2.0 license, `*Craft` naming) to stay compatible with the
+ecosystem, without claiming to be official.
 
-## Codice di PlotVale
+## PlotVale code
 
-Tutto il codice in questo repository è opera dei contributori di PlotVale ed è
-distribuito con doppia licenza **MIT OR Apache-2.0** (vedi `LICENSE-MIT`, `LICENSE-APACHE`).
+All code in this repository is the work of PlotVale contributors and is
+distributed under the dual **MIT OR Apache-2.0** license (see `LICENSE-MIT`,
+`LICENSE-APACHE`).
 
-I testi `LICENSE-MIT` e `LICENSE-APACHE` sono i testi ufficiali delle rispettive licenze.
+The `LICENSE-MIT` and `LICENSE-APACHE` texts are the official texts of the
+respective licenses.
 
-## Dipendenze (da crates.io, vedi `Cargo.lock` per le versioni esatte)
+## Dependencies (from crates.io; see `Cargo.lock` for exact versions)
 
-| Crate | Licenza | Uso in PlotVale |
+| Crate | License | Use in PlotVale |
 |---|---|---|
-| `eframe`, `egui` | MIT OR Apache-2.0 | finestra e interfaccia grafica |
-| `egui_dock` | MIT | pannelli agganciabili |
-| `rfd` | MIT | dialoghi nativi di apertura/salvataggio |
-| `ropey` | MIT | buffer di testo dell'editor |
-| `serde`, `serde_json` | MIT OR Apache-2.0 | serializzazione del formato `.plotvale` |
-| `zip` | MIT | contenitore `.plotvale` |
-| `ulid` | MIT OR Apache-2.0 | identificatori stabili dei nodi |
-| `chrono` | MIT OR Apache-2.0 | timestamp di backup e snapshot |
-| `regex` | MIT OR Apache-2.0 | ricerca con espressioni regolari |
-| `clap` | MIT OR Apache-2.0 | interfaccia a riga di comando |
-| `docx-rs` | MIT | esportazione DOCX |
-| `epub-builder` | **MPL-2.0** | esportazione EPUB |
-| `thiserror` | MIT OR Apache-2.0 | tipi di errore |
-| `proptest`, `tempfile` | MIT OR Apache-2.0 (solo dev) | test |
+| `eframe`, `egui` | MIT OR Apache-2.0 | window and graphical interface |
+| `egui_dock` | MIT | dockable panels |
+| `rfd` | MIT | native open/save dialogs |
+| `ropey` | MIT | editor text buffer |
+| `serde`, `serde_json` | MIT OR Apache-2.0 | `.plotvale` format serialization |
+| `zip` | MIT | `.plotvale` container |
+| `ulid` | MIT OR Apache-2.0 | stable node identifiers |
+| `chrono` | MIT OR Apache-2.0 | backup and snapshot timestamps |
+| `regex` | MIT OR Apache-2.0 | regular-expression search |
+| `clap` | MIT OR Apache-2.0 | command-line interface |
+| `docx-rs` | MIT | DOCX export |
+| `epub-builder` | **MPL-2.0** | EPUB export |
+| `thiserror` | MIT OR Apache-2.0 | error types |
+| `proptest`, `tempfile` | MIT OR Apache-2.0 (dev only) | tests |
 
-Nota su `epub-builder` (MPL-2.0): è usato come dipendenza libreria; il codice di
-PlotVale resta MIT/Apache-2.0. Il sorgente del crate MPL è disponibile pubblicamente
-su crates.io come previsto dalla licenza.
+Note on `epub-builder` (MPL-2.0): it is used as a library dependency; PlotVale's
+own code stays MIT/Apache-2.0. The MPL crate's source is publicly available
+on crates.io as the license requires.
 
-## Risorse linguistiche (pianificate, non ancora incluse)
+## Language resources (planned, not yet included)
 
-I futuri dizionari ortografici Hunspell (es. italiano) hanno licenze proprie
-(LGPL/MPL) e saranno distribuiti come **asset separati e opzionali**, mai linkati nel
-binario. Vedi `ROADMAP.md`.
+Future Hunspell spell-check dictionaries (e.g. Italian) carry their own licenses
+(LGPL/MPL) and will ship as **separate, optional assets**, never linked into the
+binary. See `ROADMAP.md`.

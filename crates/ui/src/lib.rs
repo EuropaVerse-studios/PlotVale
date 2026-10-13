@@ -1,8 +1,8 @@
-//! `plotvale-ui` — l'applicazione grafica di PlotVale (eframe/egui).
+//! `plotvale-ui` — the PlotVale graphical app (eframe/egui).
 //!
-//! Layout: struttura a sinistra, editor al centro (con cartellone e ricerca come
-//! schede), scheda a destra. Tutto ciò che tocca i file passa per
-//! `plotvale-project`; qui c'è solo stato dell'interfaccia.
+//! Layout: binder on the left, editor in the center (with corkboard and search
+//! as tabs), inspector on the right. Everything touching files goes through
+//! `plotvale-project`; only interface state lives here.
 
 pub mod brand;
 mod diff;
@@ -24,19 +24,29 @@ use plotvale_model::{
 use plotvale_project::{SaveOptions, find_recovery, open_any, save_any};
 use plotvale_search::{Hit, Index, SearchOptions};
 
-/// Versione dell'app (dal Cargo.toml).
+/// App version (from Cargo.toml).
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-/// Secondi di inattività prima dell'autosalvataggio.
+/// Idle seconds before autosave.
 const AUTOSAVE_SECS: u64 = 3;
-/// Domande guidate per le schede personaggio (amatoriali benvenuti).
-const SHEET_QUESTIONS: &[&str] = &[
-    "Aspetto e modo di fare",
-    "Passato in poche righe",
-    "La sua paura più grande",
-    "Cosa vuole davvero",
+/// Guided questions for character sheets (beginners welcome).
+/// Each entry is (stable storage key, locale key for the label): answers are
+/// stored under the stable key, so switching language never orphans them.
+const SHEET_QUESTIONS: &[(&str, &str)] = &[
+    ("appearance", "sheet_q1"),
+    ("past", "sheet_q2"),
+    ("fear", "sheet_q3"),
+    ("want", "sheet_q4"),
+];
+/// Italian labels used as storage keys before v0.3, each paired with the
+/// storage key that replaces it (migrated on write).
+const LEGACY_QUESTION_KEYS: &[(&str, &str)] = &[
+    ("Aspetto e modo di fare", "appearance"),
+    ("Passato in poche righe", "past"),
+    ("La sua paura più grande", "fear"),
+    ("Cosa vuole davvero", "want"),
 ];
 
-/// Un progetto aperto con il suo percorso.
+/// An open project with its path.
 pub struct DocState {
     project: Project,
     profiles: plotvale_compile::ProfilesFile,
@@ -44,13 +54,13 @@ pub struct DocState {
     folder_mode: bool,
 }
 
-/// Testo aperto nell'editor (specchio del documento nel modello).
+/// Text open in the editor (mirror of the model's document).
 #[derive(Clone, Debug, Default)]
 struct DocView {
     text: String,
 }
 
-/// Schede del pannello centrale.
+/// Center-panel tabs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum Tab {
     Welcome,
@@ -59,7 +69,7 @@ enum Tab {
     Search,
 }
 
-/// Azione in attesa di conferma per modifiche non salvate.
+/// Action awaiting confirmation due to unsaved changes.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum PendingAction {
     New,
@@ -68,7 +78,7 @@ enum PendingAction {
     Quit,
 }
 
-/// Stato dell'interfaccia (niente I/O qui dentro).
+/// Interface state (no I/O in here).
 struct UiState {
     selection: Option<NodeId>,
     open_doc: Option<NodeId>,
@@ -149,7 +159,7 @@ impl Default for UiState {
     }
 }
 
-/// L'applicazione PlotVale.
+/// The PlotVale application.
 pub struct PlotValeApp {
     doc: Option<DocState>,
     locale: Locale,
@@ -159,19 +169,21 @@ pub struct PlotValeApp {
 }
 
 impl PlotValeApp {
-    /// Crea l'app (chiamata da `eframe::run_native`).
+    /// Creates the app (called by `eframe::run_native`).
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_visuals(theme::brand_visuals());
-        let logo = brand::decode_logo(192).map(|img| {
-            cc.egui_ctx.load_texture(
+        theme::apply_theme(&cc.egui_ctx);
+        let logo_img = brand::decode_logo(192);
+        let mut logo = None;
+        if let Some(img) = logo_img {
+            logo = Some(cc.egui_ctx.load_texture(
                 "plotvale-logo",
                 img,
                 egui::TextureOptions::LINEAR,
-            )
-        });
+            ));
+        }
         Self {
             doc: None,
-            locale: Locale::italian(),
+            locale: Locale::english(),
             logo,
             dock: egui_dock::DockState::new(vec![
                 Tab::Welcome,
@@ -185,17 +197,17 @@ impl PlotValeApp {
 }
 
 // ---------------------------------------------------------------------------
-// Azioni sui documenti (niente widget qui: solo logica + I/O)
+// Document actions (no widgets here: logic + I/O only)
 // ---------------------------------------------------------------------------
 
-/// Riversa gli editor aperti nel modello.
+/// Flushes open editors into the model.
 fn flush_views(doc: &mut DocState, ui: &mut UiState) {
     for (id, view) in &ui.views {
         doc.project.set_doc_text(*id, &view.text);
     }
 }
 
-/// Salva il progetto. Restituisce `true` se salvato.
+/// Saves the project. Returns `true` if saved.
 fn do_save(doc: &mut DocState, ui: &mut UiState, loc: &Locale) -> bool {
     flush_views(doc, ui);
     let Some(path) = doc.path.clone() else {
@@ -220,7 +232,7 @@ fn do_save(doc: &mut DocState, ui: &mut UiState, loc: &Locale) -> bool {
     }
 }
 
-/// Aggiorna le parole odierne dopo un salvataggio.
+/// Updates today's words after a save.
 fn record_words(doc: &mut DocState, ui: &mut UiState) {
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
     if doc.project.targets.words_today_date.as_deref() != Some(&today) {
@@ -234,9 +246,9 @@ fn record_words(doc: &mut DocState, ui: &mut UiState) {
     ui.last_total_words = total;
 }
 
-/// Apre un progetto, gestendo il recupero dopo crash.
+/// Opens a project, handling crash recovery.
 fn do_open(path: PathBuf, doc_slot: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
-    // Recupero dopo crash: un .tmp più recente vale più dell'originale.
+    // Crash recovery: a newer .tmp wins over the original.
     let mut real = path.clone();
     let mut recovered = false;
     if let Some(tmp) = find_recovery(&path) {
@@ -268,7 +280,7 @@ fn do_open(path: PathBuf, doc_slot: &mut Option<DocState>, ui: &mut UiState, loc
                 expert: ui.expert,
                 ..UiState::default()
             };
-            // Seleziona la radice del manoscritto.
+            // Selects the manuscript root.
             if let Some(doc) = doc_slot {
                 ui.selection = Some(doc.project.tree.draft_root);
             }
@@ -279,7 +291,7 @@ fn do_open(path: PathBuf, doc_slot: &mut Option<DocState>, ui: &mut UiState, loc
     }
 }
 
-/// Nuovo progetto vuoto in memoria.
+/// New empty in-memory project.
 fn fresh_doc(doc_slot: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
     let project = Project::new(loc.get("untitled"), "", APP_VERSION);
     let total = project.total_words();
@@ -301,14 +313,14 @@ fn fresh_doc(doc_slot: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
     ui.status = loc.get("status_unsaved").to_string();
 }
 
-/// Assicura che il documento abbia una vista editor aperta.
+/// Ensures the document has an open editor view.
 fn ensure_view(doc: &DocState, ui: &mut UiState, id: NodeId) {
     ui.views.entry(id).or_insert_with(|| DocView {
         text: doc.project.doc_text(id).to_string(),
     });
 }
 
-/// Elimina definitivamente un sottoalbero e pulisce testi, viste, schede e snapshot.
+/// Permanently deletes a subtree and cleans texts, views, sheets, and snapshots.
 fn purge_subtree(doc: &mut DocState, ui: &mut UiState, removed: &[NodeId]) {
     for id in removed {
         doc.project.docs.remove(id);
@@ -343,7 +355,7 @@ fn purge_subtree(doc: &mut DocState, ui: &mut UiState, removed: &[NodeId]) {
     ui.dirty = true;
 }
 
-/// Crea un nodo testuale (e la scheda collegata, se serve).
+/// Creates a textual node (and the linked sheet, if needed).
 fn create_node(
     doc: &mut DocState,
     ui: &mut UiState,
@@ -366,7 +378,7 @@ fn create_node(
             })
         })
         .unwrap_or(doc.project.tree.draft_root);
-    // La ricerca vive sotto la ricerca, il resto sotto il manoscritto.
+    // Research lives under research, the rest under the manuscript.
     let parent = match kind {
         NodeKind::ResearchItem if parent == doc.project.tree.draft_root => {
             doc.project.tree.research_root
@@ -417,13 +429,13 @@ fn create_node(
 }
 
 // ---------------------------------------------------------------------------
-// App: frame principale
+// App: main frame
 // ---------------------------------------------------------------------------
 
 impl eframe::App for PlotValeApp {
     fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = root.ctx().clone();
-        // Scorciatoie globali.
+        // Global shortcuts.
         if ctx.input_mut(|i| {
             i.consume_shortcut(&egui::KeyboardShortcut::new(
                 egui::Modifiers::COMMAND,
@@ -448,7 +460,7 @@ impl eframe::App for PlotValeApp {
             logo,
         } = self;
         menu_bar(root, doc, uistate, locale);
-        // Cambio lingua richiesto dal menu.
+        // Language switch requested from the menu.
         if uistate.status == "lang:it" {
             *locale = Locale::italian();
             uistate.status.clear();
@@ -459,7 +471,7 @@ impl eframe::App for PlotValeApp {
         status_bar(root, doc, uistate, locale);
         dialogs(&ctx, doc, uistate, locale);
 
-        // Struttura e scheda sono pannelli fissi; il centro è agganciabile.
+        // Binder and inspector are fixed panels; the center is dockable.
         if doc.is_some() {
             egui::Panel::left("binder")
                 .resizable(true)
@@ -484,7 +496,7 @@ impl eframe::App for PlotValeApp {
             egui_dock::DockArea::new(dock).show_inside(center, &mut viewer);
         });
 
-        // Autosalvataggio dopo 3 s di inattività.
+        // Autosave after 3 s idle.
         let need_save = uistate.dirty
             && uistate
                 .last_edit
@@ -499,7 +511,7 @@ impl eframe::App for PlotValeApp {
     }
 }
 
-/// Dialogo "Salva con nome" (solo bundle `.plotvale`).
+/// "Save as" dialog (`.plotvale` bundles only).
 fn save_as_dialog(doc: &mut DocState, ui: &mut UiState, loc: &Locale) {
     let file = rfd::FileDialog::new()
         .set_title(loc.get("save_title"))
@@ -514,7 +526,7 @@ fn save_as_dialog(doc: &mut DocState, ui: &mut UiState, loc: &Locale) {
     }
 }
 
-/// Vista per `egui_dock`: tutto lo stato mutabile passa di qui.
+/// View for `egui_dock`: all mutable state passes through here.
 struct Viewer<'a> {
     doc: &'a mut Option<DocState>,
     ui: &'a mut UiState,
@@ -555,10 +567,10 @@ impl egui_dock::TabViewer for Viewer<'_> {
 }
 
 // ---------------------------------------------------------------------------
-// Menu, barra di stato, dialoghi
+// Menu, status bar, dialogs
 // ---------------------------------------------------------------------------
 
-/// Esegue l'azione o la mette in attesa se ci sono modifiche non salvate.
+/// Runs the action or defers it if there are unsaved changes.
 fn request_action(
     doc: &mut Option<DocState>,
     ui: &mut UiState,
@@ -773,7 +785,7 @@ fn ui_lang_name(loc: &Locale) -> &str {
 }
 
 // ---------------------------------------------------------------------------
-// Struttura (binder)
+// Binder
 // ---------------------------------------------------------------------------
 
 fn kind_icon(kind: NodeKind) -> &'static str {
@@ -793,7 +805,7 @@ fn kind_icon(kind: NodeKind) -> &'static str {
 fn status_dot(status: DocStatus) -> (&'static str, egui::Color32) {
     match status {
         DocStatus::Todo => ("\u{25cb}", egui::Color32::GRAY),
-        DocStatus::Draft => ("\u{25cf}", egui::Color32::YELLOW),
+        DocStatus::Draft => ("\u{25cf}", theme::accent()),
         DocStatus::Revised => ("\u{25cf}", egui::Color32::LIGHT_BLUE),
         DocStatus::Final => ("\u{25cf}", egui::Color32::GREEN),
     }
@@ -824,7 +836,7 @@ fn binder_panel(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, pane
                             ui.new_name_buf.trim().to_string()
                         };
                         ui.new_name_buf.clear();
-                        // Parent adatto: la selezione se contenitore, altrimenti la radice.
+                        // Fitting parent: the selection if a container, else the root.
                         let parent = ui.selection.filter(|id| {
                             d.project.tree.get(*id).is_ok_and(|n| {
                                 !d.project.tree.is_in_trash(*id)
@@ -904,7 +916,7 @@ fn node_row(d: &mut DocState, ui: &mut UiState, loc: &Locale, egui_ui: &mut egui
     let Ok(node) = d.project.tree.get(id).cloned() else {
         return;
     };
-    // Rinomina inline.
+    // Inline rename.
     if ui.renaming == Some(id) {
         egui_ui.horizontal(|row| {
             let resp = row.text_edit_singleline(&mut ui.rename_buf);
@@ -941,25 +953,15 @@ fn node_row(d: &mut DocState, ui: &mut UiState, loc: &Locale, egui_ui: &mut egui
         } else {
             row.add_space(18.0);
         }
-        let (dot, color) = status_dot(node.meta.status);
-        let label = if matches!(node.kind, NodeKind::Scene | NodeKind::Note) {
-            egui::RichText::new(format!("{} {} {}", kind_icon(node.kind), dot, node.title)).color(
-                if selected {
-                    egui::Color32::WHITE
-                } else {
-                    row.visuals().widgets.noninteractive.fg_stroke.color
-                },
-            )
+        let (dot, dot_color) = status_dot(node.meta.status);
+        row.colored_label(dot_color, dot);
+        let ink = if selected {
+            theme::cream()
         } else {
-            egui::RichText::new(format!("{} {}", kind_icon(node.kind), node.title)).color(
-                if selected {
-                    egui::Color32::WHITE
-                } else {
-                    row.visuals().widgets.noninteractive.fg_stroke.color
-                },
-            )
+            row.visuals().widgets.noninteractive.fg_stroke.color
         };
-        let _ = color;
+        let label =
+            egui::RichText::new(format!("{} {}", kind_icon(node.kind), node.title)).color(ink);
         let resp = row.selectable_label(selected, label);
         if resp.clicked() {
             ui.selection = Some(id);
@@ -1114,7 +1116,7 @@ fn node_context_menu(
 }
 
 // ---------------------------------------------------------------------------
-// Scheda (inspector)
+// Inspector
 // ---------------------------------------------------------------------------
 
 fn inspector_panel(
@@ -1133,7 +1135,7 @@ fn inspector_panel(
         return;
     };
     panel.separator();
-    // Titolo.
+    // Title.
     panel.label(loc.get("insp_title"));
     let mut title = node.title.clone();
     if panel.text_edit_singleline(&mut title).changed() && !title.trim().is_empty() {
@@ -1146,7 +1148,7 @@ fn inspector_panel(
         loc.get("insp_kind"),
         kind_name(loc, node.kind)
     ));
-    // Stato.
+    // Status.
     panel.horizontal(|row| {
         row.label(loc.get("insp_status"));
         let current = node.meta.status;
@@ -1174,7 +1176,7 @@ fn inspector_panel(
                 }
             });
     });
-    // Etichetta.
+    // Label.
     panel.label(loc.get("insp_label"));
     let mut label = node.meta.label.clone();
     if panel.text_edit_singleline(&mut label).changed()
@@ -1184,7 +1186,7 @@ fn inspector_panel(
         d.project.touch();
         ui.dirty = true;
     }
-    // Sinossi.
+    // Synopsis.
     panel.label(loc.get("insp_synopsis"));
     let mut syn = node.meta.synopsis.clone();
     if panel.text_edit_multiline(&mut syn).changed()
@@ -1194,7 +1196,7 @@ fn inspector_panel(
         d.project.touch();
         ui.dirty = true;
     }
-    // Keyword.
+    // Keywords.
     panel.label(loc.get("insp_keywords"));
     let mut kw = node.meta.keywords.join(", ");
     if panel.text_edit_singleline(&mut kw).changed() {
@@ -1205,7 +1207,7 @@ fn inspector_panel(
             .map(str::to_string)
             .collect();
         if let Ok(n) = d.project.tree.get_mut(sel) {
-            // Registra anche globalmente le nuove keyword.
+            // Also registers new keywords globally.
             for k in &kws {
                 if !d.project.meta.keywords.contains(k) {
                     d.project.meta.keywords.push(k.clone());
@@ -1216,7 +1218,7 @@ fn inspector_panel(
             ui.dirty = true;
         }
     }
-    // Includi nell'export.
+    // Include in export.
     let mut incl = node.meta.include_in_export;
     if panel.checkbox(&mut incl, loc.get("insp_include")).changed()
         && let Ok(n) = d.project.tree.get_mut(sel)
@@ -1225,18 +1227,18 @@ fn inspector_panel(
         d.project.touch();
         ui.dirty = true;
     }
-    // Parole del documento.
+    // Document words.
     if node.kind.can_have_text() {
         let words = count_words(d.project.doc_text(sel)).words;
         panel.label(format!("{}: {words}", loc.get("insp_words")));
     }
-    // Schede personaggio/luogo.
+    // Character/location sheets.
     match node.kind {
         NodeKind::CharacterSheet => sheet_character_editor(d, ui, loc, panel, sel),
         NodeKind::LocationSheet => sheet_location_editor(d, ui, loc, panel, sel),
         _ => {}
     }
-    // Campi personalizzati (modalità esperto).
+    // Custom fields (expert mode).
     if ui.expert {
         panel.separator();
         panel.collapsing(loc.get("insp_custom"), |col| {
@@ -1284,7 +1286,7 @@ fn inspector_panel(
             });
         });
     }
-    // Snapshot.
+    // Snapshots.
     if node.kind.can_have_text() {
         panel.separator();
         panel.heading(loc.get("insp_snapshots"));
@@ -1419,19 +1421,30 @@ fn sheet_character_editor(
         }
     }
     panel.label(loc.get("sheet_q"));
-    for q in SHEET_QUESTIONS {
-        panel.small(*q);
-        let mut ans = d.project.sheets.characters[idx]
+    for (storage_key, label_key) in SHEET_QUESTIONS {
+        panel.small(loc.get(label_key));
+        let sheet = &d.project.sheets.characters[idx];
+        let mut ans = sheet
             .questionnaire
-            .get(*q)
+            .get(*storage_key)
+            .or_else(|| {
+                LEGACY_QUESTION_KEYS
+                    .iter()
+                    .find(|(_, new)| new == storage_key)
+                    .and_then(|(old, _)| sheet.questionnaire.get(*old))
+            })
             .cloned()
             .unwrap_or_default();
         if panel.text_edit_multiline(&mut ans).changed() {
             let sheet = &mut d.project.sheets.characters[idx];
+            // Migrate any legacy answer to the stable key.
+            for (old, _) in LEGACY_QUESTION_KEYS {
+                sheet.questionnaire.remove(*old);
+            }
             if ans.trim().is_empty() {
-                sheet.questionnaire.remove(*q);
+                sheet.questionnaire.remove(*storage_key);
             } else {
-                sheet.questionnaire.insert((*q).to_string(), ans);
+                sheet.questionnaire.insert((*storage_key).to_string(), ans);
             }
             d.project.touch();
             ui.dirty = true;
@@ -1490,7 +1503,7 @@ fn sheet_location_editor(
 }
 
 // ---------------------------------------------------------------------------
-// Editor (singolo + scrivenings)
+// Editor (single + scrivenings)
 // ---------------------------------------------------------------------------
 
 fn view_editor(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, content: &mut egui::Ui) {
@@ -1498,8 +1511,8 @@ fn view_editor(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, conte
         content.label(loc.get("status_no_project"));
         return;
     };
-    // Modalità scrivenings: se la selezione è un contenitore, mostra tutte le
-    // scene dentro in un unico flusso continuo (ognuna resta modificabile).
+    // Scrivenings mode: if the selection is a container, shows all scenes
+    // inside in one continuous flow (each stays editable).
     let scriv_ids: Option<Vec<NodeId>> = if ui.scrivenings {
         ui.selection.and_then(|sel| {
             d.project.tree.get(sel).ok().and_then(|n| {
@@ -1579,11 +1592,11 @@ fn view_editor(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, conte
         });
 }
 
-/// Un editor di testo legato a un documento.
+/// A text editor bound to a document.
 fn doc_editor(d: &mut DocState, ui: &mut UiState, egui_ui: &mut egui::Ui, id: NodeId) {
     ensure_view(d, ui, id);
     let changed = {
-        let view = ui.views.get_mut(&id).expect("vista appena creata");
+        let view = ui.views.get_mut(&id).expect("freshly created view");
         egui_ui
             .add(
                 egui::TextEdit::multiline(&mut view.text)
@@ -1609,10 +1622,10 @@ fn doc_editor(d: &mut DocState, ui: &mut UiState, egui_ui: &mut egui::Ui, id: No
 }
 
 // ---------------------------------------------------------------------------
-// Cartellone
+// Corkboard
 // ---------------------------------------------------------------------------
 
-/// Il genitore mostrato dal cartellone: la selezione se contenitore, altrimenti suo padre.
+/// The parent shown by the corkboard: the selection if a container, else its parent.
 fn corkboard_parent(d: &DocState, ui: &UiState) -> NodeId {
     ui.selection
         .and_then(|sel| {
@@ -1682,7 +1695,7 @@ fn view_corkboard(
                         )
                     })
                     .unwrap_or_default();
-                egui::Frame::group(scroll.style()).show(scroll, |card| {
+                theme::card_frame(scroll.style()).show(scroll, |card| {
                     card.horizontal(|row| {
                         let (dot, _) = status_dot(status);
                         row.heading(format!("{dot} {title}"));
@@ -1719,7 +1732,7 @@ fn view_corkboard(
 }
 
 // ---------------------------------------------------------------------------
-// Ricerca e benvenuto
+// Search and welcome
 // ---------------------------------------------------------------------------
 
 fn run_search(doc: &DocState, ui: &mut UiState) {
@@ -1803,7 +1816,7 @@ fn view_search(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, conte
                 });
         }
     }
-    // Collezioni: ricerche salvate nel progetto.
+    // Collections: searches saved in the project.
     content.separator();
     content.heading(loc.get("search_collections"));
     let defs: Vec<CollectionDef> = d.project.meta.collections.clone();
@@ -1847,11 +1860,16 @@ fn view_welcome(
     doc: &mut Option<DocState>,
     ui: &mut UiState,
     loc: &Locale,
+    logo: Option<egui::TextureHandle>,
     content: &mut egui::Ui,
 ) {
     content.vertical_centered(|center| {
-        center.add_space(24.0);
-        center.heading(loc.get("welcome_title"));
+        center.add_space(12.0);
+        if let Some(logo) = logo {
+            center.image(&logo);
+            center.add_space(8.0);
+        }
+        center.heading(egui::RichText::new(loc.get("welcome_title")).size(26.0));
         center.label(loc.get("welcome_sub"));
         center.add_space(16.0);
         if let Some(d) = doc.as_ref() {
@@ -1890,7 +1908,7 @@ fn view_welcome(
 }
 
 // ---------------------------------------------------------------------------
-// Finestre di dialogo
+// Dialog windows
 // ---------------------------------------------------------------------------
 
 fn dialogs(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
@@ -1898,7 +1916,7 @@ fn dialogs(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, lo
         ui.want_quit = false;
         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
-    // Modifiche non salvate.
+    // Unsaved changes.
     if let Some(action) = ui.pending {
         let mut close = false;
         let mut run = false;
@@ -1909,7 +1927,7 @@ fn dialogs(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, lo
                 w.label(loc.get("dlg_unsaved_msg"));
                 w.horizontal(|row| {
                     if row.button(loc.get("dlg_save")).clicked() {
-                        // Procedi solo se il salvataggio è andato a buon fine.
+                        // Proceed only if the save succeeded.
                         run = if let Some(d) = doc.as_mut() {
                             if d.path.is_none() {
                                 save_as_dialog(d, ui, loc);
@@ -1938,7 +1956,7 @@ fn dialogs(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, lo
             run_pending(doc, ui, loc, action);
         }
     }
-    // Conferma eliminazione definitiva.
+    // Permanent-deletion confirmation.
     if let Some(id) = ui.delete_confirm {
         let mut close = false;
         egui::Window::new(loc.get("dlg_delete_title"))
@@ -1973,7 +1991,7 @@ fn dialogs(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, lo
             ui.delete_confirm = None;
         }
     }
-    // Svuota cestino.
+    // Empty trash.
     if ui.confirm_empty_trash {
         let mut close = false;
         egui::Window::new(loc.get("dlg_empty_trash_title"))
@@ -2042,7 +2060,7 @@ fn goals_window(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiStat
     egui::Window::new(loc.get("goals_title"))
         .open(&mut open)
         .show(ctx, |w| {
-            // Obiettivo progetto.
+            // Project goal.
             let mut pg_on = d.project.targets.project_goal_words.is_some();
             if w.checkbox(&mut pg_on, loc.get("goals_project_enable"))
                 .changed()
@@ -2073,7 +2091,7 @@ fn goals_window(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiStat
                     egui::ProgressBar::new((total / goal as f32).clamp(0.0, 1.0)).show_percentage(),
                 );
             }
-            // Obiettivo giornaliero.
+            // Daily goal.
             let mut dg_on = d.project.targets.daily_goal_words.is_some();
             if w.checkbox(&mut dg_on, loc.get("goals_daily_enable"))
                 .changed()
@@ -2178,7 +2196,7 @@ fn export_window(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiSta
     egui::Window::new(loc.get("export_title"))
         .open(&mut open)
         .show(ctx, |w| {
-            // Profilo.
+            // Profile.
             let names: Vec<String> = d.profiles.profiles.iter().map(|p| p.name.clone()).collect();
             egui::ComboBox::from_label(loc.get("export_preset"))
                 .selected_text(&ui.export_preset)
@@ -2188,14 +2206,14 @@ fn export_window(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiSta
                             .selectable_value(&mut ui.export_preset, name.clone(), name)
                             .clicked()
                         {
-                            // Allinea il flag annotazioni al profilo scelto.
+                            // Aligns the annotations flag to the chosen profile.
                             if let Some(p) = d.profiles.profiles.iter().find(|p| &p.name == name) {
                                 ui.export_notes = p.keep_notes;
                             }
                         }
                     }
                 });
-            // Allinea una tantum all'apertura.
+            // One-time alignment on open.
             w.checkbox(&mut ui.export_notes, loc.get("export_keep_notes"));
             w.separator();
             for format in ExportFormat::all() {

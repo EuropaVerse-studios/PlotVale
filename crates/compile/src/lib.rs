@@ -1,45 +1,45 @@
-//! `plotvale-compile` — il motore di composizione.
+//! `plotvale-compile` — the composition engine.
 //!
-//! Trasforma una selezione ordinata di nodi in [`Compiled`]: titolo, autore,
-//! sezioni tipate e suggerimenti di impaginazione. È l'**unica fonte di verità**
-//! per tutti gli export: i renderer non inventano contenuti.
+//! Turns an ordered node selection into [`Compiled`]: title, author, typed
+//! sections, and layout hints. It is the **single source of truth** for all
+//! exports: renderers never invent content.
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use plotvale_model::{NodeId, Project};
 
-/// Errori di composizione.
+/// Composition errors.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum CompileError {
-    /// Nodo richiesto assente.
-    #[error("elemento non trovato: {0}")]
+    /// Requested node missing.
+    #[error("item not found: {0}")]
     NotFound(NodeId),
 }
 
 // ---------------------------------------------------------------------------
-// Testo formattato
+// Formatted text
 // ---------------------------------------------------------------------------
 
-/// Porzione di testo con formattazione.
+/// Text span with formatting.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Inline {
-    /// Testo semplice.
+    /// Plain text.
     Text(String),
-    /// **grassetto** (può annidare corsivo).
+    /// **bold** (may nest italic).
     Bold(Vec<Inline>),
-    /// *corsivo* (può annidare grassetto).
+    /// *italic* (may nest bold).
     Italic(Vec<Inline>),
-    /// `codice`.
+    /// `code`.
     Code(String),
-    /// Riferimento a nota `[^id]`.
+    /// Note reference `[^id]`.
     FootnoteRef(String),
-    /// Annotazione `[[nota: …]]` (esclusa dall'export salvo profilo).
+    /// Annotation `[[note: …]]` (excluded from export unless profile says so).
     Note(String),
 }
 
 impl Inline {
-    /// Testo semplice senza formattazione (per statistiche e anteprime).
+    /// Plain text without formatting (for statistics and previews).
     pub fn plain_text(items: &[Inline]) -> String {
         let mut out = String::new();
         for item in items {
@@ -58,14 +58,14 @@ impl Inline {
     }
 }
 
-/// Analizza la formattazione inline di una riga Markdown.
+/// Parses the inline formatting of a Markdown line.
 pub fn parse_inline(s: &str) -> Vec<Inline> {
     let chars: Vec<char> = s.chars().collect();
     let (items, _) = parse_inline_until(&chars, 0, None);
     items
 }
 
-/// Analizza fino a un terminatore (`**`, `*`, …) o alla fine.
+/// Parses up to a terminator (`**`, `*`, …) or the end.
 fn parse_inline_until(
     chars: &[char],
     mut i: usize,
@@ -79,7 +79,7 @@ fn parse_inline_until(
         }
     };
     while i < chars.len() {
-        // Terminatore del livello superiore?
+        // Top-level terminator?
         if let Some(term) = terminator
             && matches_term(chars, i, term)
         {
@@ -87,7 +87,7 @@ fn parse_inline_until(
             return (out, i + term.chars().count());
         }
         if matches_term(chars, i, "**") {
-            // Cerca la chiusura; se manca, è testo letterale.
+            // Look for the closing marker; if missing, it is literal text.
             let (inner, next) = parse_inline_until(chars, i + 2, Some("**"));
             if next > i + 2 && closed_before(chars, next, "**") {
                 flush(&mut out, &mut buf);
@@ -174,39 +174,39 @@ fn find_str(chars: &[char], from: usize, needle: &str) -> Option<usize> {
 }
 
 // ---------------------------------------------------------------------------
-// Blocchi e sezioni
+// Blocks and sections
 // ---------------------------------------------------------------------------
 
-/// Blocco di contenuto.
+/// Content block.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Block {
-    /// Titolo di livello 1–6.
+    /// Level 1–6 heading.
     Heading {
-        /// Livello (1–6).
+        /// Level (1–6).
         level: u8,
-        /// Testo formattato.
+        /// Formatted text.
         text: Vec<Inline>,
     },
-    /// Paragrafo.
+    /// Paragraph.
     Para(Vec<Inline>),
-    /// Citazione (`> …`).
+    /// Quote (`> …`).
     Quote(Vec<Inline>),
-    /// Voce di elenco (`- …`).
+    /// List item (`- …`).
     ListItem(Vec<Inline>),
-    /// Separatore di scena (`---` nel testo).
+    /// Scene separator (`---` in the text).
     SceneBreak,
-    /// Interruzione di pagina (solo per formati paginati).
+    /// Page break (paginated formats only).
     PageBreak,
-    /// Definizione di nota `[^id]: testo`.
+    /// Note definition `[^id]: text`.
     FootnoteDef {
-        /// Id della nota.
+        /// Note id.
         id: String,
-        /// Testo formattato.
+        /// Formatted text.
         text: Vec<Inline>,
     },
 }
 
-/// Analizza il testo Markdown di un documento in blocchi.
+/// Parses a document's Markdown text into blocks.
 pub fn parse_blocks(text: &str, keep_notes: bool) -> Vec<Block> {
     let mut blocks = Vec::new();
     for line in text.lines() {
@@ -268,7 +268,7 @@ fn parse_footnote_def(line: &str) -> Option<(String, &str)> {
     Some((id, def))
 }
 
-/// Rimuove le annotazioni dagli inline se il profilo non le vuole.
+/// Strips annotations from inlines unless the profile wants them.
 fn filter_notes(items: Vec<Inline>, keep: bool) -> Vec<Inline> {
     if keep {
         return items;
@@ -284,52 +284,52 @@ fn filter_notes(items: Vec<Inline>, keep: bool) -> Vec<Inline> {
         .collect()
 }
 
-/// Tipo di sezione del manoscritto composto.
+/// Section kind of the compiled manuscript.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SectionKind {
-    /// Frontespizio e pagine iniziali.
+    /// Title page and front matter.
     FrontMatter,
-    /// Capitolo o cartella (ha un titolo mostrato).
+    /// Chapter or folder (has a shown title).
     Chapter,
-    /// Scena (titolo mostrato solo se il profilo lo chiede).
+    /// Scene (title shown only if the profile asks).
     Scene,
 }
 
-/// Una sezione del manoscritto composto.
+/// One section of the compiled manuscript.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Section {
-    /// Titolo della sezione.
+    /// Section title.
     pub title: String,
-    /// Livello di profondità (1 = capitolo).
+    /// Depth level (1 = chapter).
     pub level: u8,
-    /// Tipo di sezione.
+    /// Section kind.
     pub kind: SectionKind,
-    /// Blocchi di contenuto.
+    /// Content blocks.
     pub blocks: Vec<Block>,
 }
 
 // ---------------------------------------------------------------------------
-// Profili
+// Profiles
 // ---------------------------------------------------------------------------
 
-/// Profilo di composizione: come assemblare ed esportare.
+/// Composition profile: how to assemble and export.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CompileProfile {
-    /// Nome del profilo.
+    /// Profile name.
     pub name: String,
-    /// Mostra i titoli delle scene (di default solo i capitoli).
+    /// Shows scene titles (by default chapters only).
     #[serde(default)]
     pub show_scene_titles: bool,
-    /// Separatore tra scene (es. `***`).
+    /// Separator between scenes (e.g. `***`).
     #[serde(default = "default_separator")]
     pub scene_separator: String,
-    /// Interruzione di pagina prima dei capitoli (formati paginati).
+    /// Page break before chapters (paginated formats).
     #[serde(default = "default_true")]
     pub page_break_before_chapters: bool,
-    /// Tieni le annotazioni `[[nota: …]]` nell'output.
+    /// Keeps `[[note: …]]` annotations in the output.
     #[serde(default)]
     pub keep_notes: bool,
-    /// Dedica o esergo in apertura.
+    /// Opening dedication or epigraph.
     #[serde(default)]
     pub dedication: String,
 }
@@ -343,7 +343,7 @@ fn default_true() -> bool {
 }
 
 impl CompileProfile {
-    /// Manoscritto standard: capitoli titolati, scene separate da `***`.
+    /// Standard manuscript: titled chapters, scenes separated by `***`.
     pub fn manuscript() -> Self {
         Self {
             name: "manoscritto".to_string(),
@@ -355,7 +355,7 @@ impl CompileProfile {
         }
     }
 
-    /// Per far leggere a beta reader: titoli di scena visibili, niente annotazioni.
+    /// For beta readers: visible scene titles, no annotations.
     pub fn beta_reader() -> Self {
         Self {
             name: "beta-reader".to_string(),
@@ -364,7 +364,7 @@ impl CompileProfile {
         }
     }
 
-    /// Ebook: niente interruzioni di pagina forzate tra capitoli brevi.
+    /// Ebook: no forced page breaks between short chapters.
     pub fn ebook() -> Self {
         Self {
             name: "ebook".to_string(),
@@ -373,7 +373,7 @@ impl CompileProfile {
         }
     }
 
-    /// Fedeltà: tutto ciò che è nel progetto, annotazioni incluse.
+    /// Faithful: everything in the project, annotations included.
     pub fn faithful() -> Self {
         Self {
             name: "fedelta".to_string(),
@@ -384,12 +384,12 @@ impl CompileProfile {
     }
 }
 
-/// Profili salvati nel progetto (`composizione/profili.json`).
+/// Profiles saved in the project (`composizione/profili.json`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProfilesFile {
-    /// Profili disponibili.
+    /// Available profiles.
     pub profiles: Vec<CompileProfile>,
-    /// Nome del profilo attivo.
+    /// Active profile name.
     pub active: String,
 }
 
@@ -408,7 +408,7 @@ impl Default for ProfilesFile {
 }
 
 impl ProfilesFile {
-    /// Profilo attivo (o il primo se il nome non esiste più).
+    /// Active profile (or the first if the name no longer exists).
     pub fn active_profile(&self) -> CompileProfile {
         self.profiles
             .iter()
@@ -420,29 +420,28 @@ impl ProfilesFile {
 }
 
 // ---------------------------------------------------------------------------
-// Composizione
+// Composition
 // ---------------------------------------------------------------------------
 
-/// Manoscritto composto, pronto per i renderer.
+/// Compiled manuscript, ready for renderers.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Compiled {
-    /// Titolo dell'opera.
+    /// Title of the work.
     pub title: String,
-    /// Autore.
+    /// Author.
     pub author: String,
-    /// Sezioni in ordine.
+    /// Sections in order.
     pub sections: Vec<Section>,
-    /// Separatore tra scene (dal profilo).
+    /// Separator between scenes (from the profile).
     pub scene_separator: String,
-    /// Interruzione di pagina prima dei capitoli (dal profilo).
+    /// Page break before chapters (from the profile).
     pub page_break_before_chapters: bool,
 }
 
-/// Compone i documenti indicati (in ordine) secondo il profilo.
+/// Compiles the given documents (in order) under the profile.
 ///
-/// Le cartelle diventano capitoli titolati; le scene diventano sezioni di testo;
-/// i documenti esclusi (`include_in_export = false`), le note e il cestino vengono
-/// saltati.
+/// Folders become titled chapters; scenes become text sections; excluded
+/// documents (`include_in_export = false`), notes, and trash are skipped.
 pub fn compile(
     project: &Project,
     doc_ids: &[NodeId],
@@ -497,7 +496,7 @@ pub fn compile(
                     blocks,
                 });
             }
-            // Note, ricerca e schede non entrano nel manoscritto.
+            // Notes, research, and sheets stay out of the manuscript.
             _ => {}
         }
     }
@@ -510,8 +509,8 @@ pub fn compile(
     })
 }
 
-/// Espande una selezione in una lista ordinata di id, scendendo nelle cartelle
-/// in ordine di struttura. Se vuota, usa l'intero manoscritto.
+/// Expands a selection into an ordered id list, descending into folders
+/// in tree order. If empty, uses the whole manuscript.
 pub fn expand_selection(project: &Project, selection: &[NodeId]) -> Vec<NodeId> {
     let roots: Vec<NodeId> = if selection.is_empty() {
         vec![project.tree.draft_root]
@@ -584,11 +583,11 @@ mod tests {
         let ids = expand_selection(&project, &[]);
         let compiled = compile(&project, &ids, &CompileProfile::manuscript()).unwrap();
         assert_eq!(compiled.title, "Romanzo");
-        // Capitolo + scena.
+        // Chapter + scene.
         assert_eq!(compiled.sections.len(), 2);
         assert_eq!(compiled.sections[0].kind, SectionKind::Chapter);
         assert_eq!(compiled.sections[1].kind, SectionKind::Scene);
-        // L'annotazione è sparita, la nota resta.
+        // The annotation is gone, the note stays.
         let text = format!("{:?}", compiled.sections[1].blocks);
         assert!(!text.contains("rivedere"));
         assert!(text.contains("FootnoteRef"));

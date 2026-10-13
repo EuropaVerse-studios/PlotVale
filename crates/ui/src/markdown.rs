@@ -1,15 +1,15 @@
-//! Stile Markdown inline per l'editor (Livello A).
+//! Inline Markdown styling for the editor (Level A).
 //!
-//! Il testo salvato resta Markdown puro; qui lo mostriamo formattato: titoli grandi,
-//! grassetto e corsivo resi, marker colorati in modo discreto. I marker restano
-//! visibili (saranno nascosti dall'editor custom del Livello B, vedi ROADMAP).
+//! Saved text stays pure Markdown; here we render it formatted: large headings,
+//! rendered bold and italic, subtly colored markers. Markers stay visible
+//! (the custom Level-B editor will hide them, see ROADMAP).
 
 use std::sync::Arc;
 
 use egui::text::{Galley, LayoutJob};
 use egui::{FontId, TextFormat};
 
-/// Impagina il testo Markdown con stile inline, pronto per `TextEdit::layouter`.
+/// Lays out Markdown text with inline styling, ready for `TextEdit::layouter`.
 pub fn layout_markdown(ui: &egui::Ui, text: &str, wrap_width: f32) -> Arc<Galley> {
     let visuals = ui.visuals();
     let ink = visuals.widgets.noninteractive.fg_stroke.color;
@@ -82,9 +82,9 @@ fn push_heading(
     push_inline(ui, job, rest, &head, weak);
 }
 
-/// Formattazione inline con i font incorporati in egui (che non hanno un vero
-/// bold): il "grassetto" è evidenziato come con un evidenziatore, il corsivo è
-/// reale, i marker restano in colore attenuato.
+/// Inline formatting with egui's built-in fonts (which have no real bold):
+/// "bold" is highlighted like with a marker pen, italics are real,
+/// markers stay in a muted color.
 fn push_inline(
     ui: &egui::Ui,
     job: &mut LayoutJob,
@@ -97,7 +97,7 @@ fn push_inline(
     let chars: Vec<char> = text.chars().collect();
     let mut i = 0;
     let mut buf = String::new();
-    // Pila di stili: (evidenziato, corsivo).
+    // Style stack: (highlighted, italic).
     let mut stack: Vec<(bool, bool)> = vec![(false, false)];
     while i < chars.len() {
         if chars[i] == '*' && i + 1 < chars.len() && chars[i + 1] == '*' {
@@ -129,7 +129,7 @@ fn push_inline(
 fn current_format(stack: &[(bool, bool)], base: &TextFormat, emph: &TextFormat) -> TextFormat {
     let (bold, italic) = stack.last().copied().unwrap_or((false, false));
     let mut f = if bold { emph.clone() } else { base.clone() };
-    // Stessa dimensione del livello corrente (niente righe "a balzi").
+    // Same size as the current level (no "jumpy" lines).
     f.font_id = base.font_id.clone();
     if italic {
         f.italics = true;
@@ -150,7 +150,7 @@ fn flush_current(
     }
 }
 
-/// Apre o chiude un marcatore `**` (bold=true) o `*` (bold=false).
+/// Opens or closes a `**` (bold=true) or `*` (bold=false) marker.
 #[allow(clippy::too_many_arguments)]
 fn toggle(
     job: &mut LayoutJob,

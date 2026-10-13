@@ -1,39 +1,42 @@
-# CONTRIBUTING.md — come contribuire a PlotVale
+# CONTRIBUTING.md — how to contribute to PlotVale
 
-Grazie per voler contribuire! PlotVale è pensato per restare semplice da
-approcciare, anche per chi è al primo progetto open source.
+Thanks for wanting to contribute! PlotVale is meant to stay approachable,
+even if this is your first open-source project.
 
-## Prima di iniziare
+## Before you start
 
-1. Leggi `README.md`, `docs/architecture.md` e `AGENTS.md`.
-2. Apri (o scegli) una issue: niente PR senza issue collegata, salvo typo e docs.
-3. Per dubbi sulla direzione, la discussione viene prima del codice.
+1. Read `README.md`, `docs/architecture.md`, and `AGENTS.md`.
+2. Open (or pick) an issue: no PR without a linked issue, except typos and docs.
+3. Unsure about direction? Discuss first, code second.
 
-## Regole del codice
+## Code rules
 
-- Rust edition 2024, `cargo fmt` obbligatorio, `cargo clippy -- -D warnings` pulito.
-- `unsafe_code = "forbid"`: niente `unsafe` in tutto il workspace.
-- Niente `unwrap()`/`expect()` su percorsi raggiungibili dall'utente: errori con
-  `thiserror`, messaggi chiari (e tradotti) nell'interfaccia.
-- Il core (`model`, `project`, `search`, `compile`, `export`) **non dipende da egui**:
-  deve restare testabile senza GUI e compilabile per WASM.
-- Ogni stringa visibile nell'interfaccia passa per `t("chiave")` con voce in
-  `locales/it.json` **e** `locales/en.json` (`cargo run -p xtask -- check-locales`).
-- Nuove funzioni = nuovi test. Bug fix = test di regressione.
+- Rust edition 2024, `cargo fmt` mandatory, `cargo clippy -- -D warnings` clean.
+- `unsafe_code = "forbid"`: no `unsafe` anywhere in the workspace.
+- No `unwrap()`/`expect()` on user-reachable paths: errors via `thiserror`, with
+  clear messages (translated in the UI) for interface-facing failures.
+- The core (`model`, `project`, `search`, `compile`, `export`) **must not depend
+  on egui**: it has to stay testable without a GUI and compilable to WASM.
+- Every user-visible interface string goes through `t("key")` with an entry in
+  both `locales/en.json` **and** `locales/it.json`
+  (`cargo run -p xtask -- check-locales`).
+- Comments, docs, commit messages, and issue text are in **English**; the
+  bilingual (EN/IT) strings live only in `locales/` and the UI.
+- New features = new tests. Bug fixes = regression tests.
 
-## Flusso di lavoro
+## Workflow
 
 ```sh
-git checkout -b issue-123-breve-descrizione
-# ... modifiche ...
+git checkout -b issue-123-short-description
+# ... changes ...
 cargo fmt && cargo clippy --workspace -- -D warnings && cargo test --workspace
-git commit -m "Area: cosa cambia e perche' (issue #123)"
+git commit -m "Area: what changes and why (issue #123)"
 ```
 
-Commit piccoli e tematici, messaggi in italiano o inglese, mai generici ("fix", "update").
+Small, focused commits with English messages, never generic ("fix", "update").
 
-## Testo e tono
+## Text and tone
 
-PlotVale parla a scrittori, anche principianti: messaggi d'errore in linguaggio
-chiaro, niente gergo, niente panico. Se una funzione avanzata confonde un dilettante,
-va nascosta in modalità Esperto o spiegata in una riga.
+PlotVale talks to writers, including beginners: error messages in plain language,
+no jargon, no panic. If an advanced feature confuses a hobbyist, it belongs
+behind Expert mode or needs a one-line explanation.

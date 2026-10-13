@@ -1,9 +1,9 @@
-//! `plotvale-project` — l'unico punto che tocca il filesystem.
+//! `plotvale-project` — the only place that touches the filesystem.
 //!
-//! Legge e scrive progetti `.plotvale` (ZIP di Markdown + JSON, vedi
-//! `docs/format-spec.md`) e cartelle progetto con la stessa struttura.
-//! Il salvataggio è **atomico** (file temporaneo + rename), con **backup a
-//! rotazione** e **recupero dopo crash**. Il resto del programma non apre mai file.
+//! Reads and writes `.plotvale` projects (a ZIP of Markdown + JSON, see
+//! `docs/format-spec.md`) and project folders with the same layout.
+//! Saving is **atomic** (temp file + rename), with **rotating backups** and
+//! **crash recovery**. The rest of the program never opens files.
 
 use chrono::Utc;
 use std::fs::{self, File};
@@ -16,70 +16,70 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 use plotvale_compile::ProfilesFile;
 use plotvale_model::{NodeId, Project, SCHEMA_VERSION};
 
-/// Versione del formato che sappiamo leggere e scrivere.
+/// Format version we can read and write.
 pub use plotvale_model::SCHEMA_VERSION as FORMAT_VERSION;
 
-/// Nomi delle voci dentro il bundle (vedi `docs/format-spec.md`).
+/// Entry names inside the bundle (see `docs/format-spec.md`).
 pub mod entries {
-    /// Manifest del progetto.
+    /// Project manifest.
     pub const MANIFEST: &str = "plotvale.json";
-    /// Albero dei nodi.
+    /// Node tree.
     pub const TREE: &str = "struttura.json";
-    /// Metadati globali.
+    /// Global metadata.
     pub const META: &str = "metadati.json";
-    /// Obiettivi di scrittura.
+    /// Writing goals.
     pub const TARGETS: &str = "obiettivi.json";
-    /// Schede personaggio.
+    /// Character sheets.
     pub const CHARACTERS: &str = "schede/personaggi.json";
-    /// Schede luogo.
+    /// Location sheets.
     pub const LOCATIONS: &str = "schede/luoghi.json";
-    /// Profili di composizione.
+    /// Composition profiles.
     pub const PROFILES: &str = "composizione/profili.json";
-    /// Prefisso dei testi (`testi/<ULID>.md`).
+    /// Text prefix (`testi/<ULID>.md`).
     pub const TEXTS_PREFIX: &str = "testi/";
-    /// Prefisso degli snapshot (`snapshot/<ULID-doc>/<id>-<etichetta>.md`).
+    /// Snapshot prefix (`snapshot/<ULID-doc>/<id>-<label>.md`).
     pub const SNAPSHOTS_PREFIX: &str = "snapshot/";
 }
 
-/// Errori di apertura e salvataggio. Mai un panic su file utente.
+/// Open and save errors. Never a panic on user files.
 #[derive(Debug, Error)]
 pub enum ProjectError {
-    /// Errore di I/O (permessi, disco pieno, …).
-    #[error("errore di lettura/scrittura: {0}")]
+    /// I/O error (permissions, full disk, …).
+    #[error("read/write error: {0}")]
     Io(#[from] std::io::Error),
-    /// Archivio ZIP illeggibile o troncato.
-    #[error("file danneggiato o non valido: {0}")]
+    /// Unreadable or truncated ZIP archive.
+    #[error("damaged or invalid file: {0}")]
     Zip(#[from] zip::result::ZipError),
-    /// JSON interno non valido.
-    #[error("dati interni non validi in {entry}: {message}")]
+    /// Invalid inner JSON.
+    #[error("invalid inner data in {entry}: {message}")]
     Json {
-        /// Voce dell'archivio coinvolta.
+        /// Archive entry involved.
         entry: String,
-        /// Dettaglio.
+        /// Detail.
         message: String,
     },
-    /// Voce obbligatoria mancante.
-    #[error("voce mancante nel progetto: {0}")]
+    /// Missing required entry.
+    #[error("missing entry in project: {0}")]
     MissingEntry(String),
-    /// Versione del formato più recente di quella supportata.
+    /// Format version newer than the supported one.
     #[error(
-        "progetto creato con una versione più recente (schema {found}, supportato {supported}): aggiorna PlotVale"
+        "project created with a newer version (schema {found}, supported {supported}): update PlotVale"
     )]
     UnsupportedVersion {
-        /// Versione trovata nel file.
+        /// Version found in the file.
         found: u32,
-        /// Versione supportata.
+        /// Supported version.
         supported: u32,
     },
-    /// Struttura dati incoerente.
-    #[error("progetto incoerente: {0}")]
+    /// Inconsistent data.
+    #[error("inconsistent project: {0}")]
     Inconsistent(String),
 }
 
-/// Opzioni di salvataggio.
+/// Save options.
 #[derive(Clone, Debug)]
 pub struct SaveOptions {
-    /// Quanti backup tenere a rotazione (0 = nessun backup).
+    /// How many backups to rotate (0 = no backups).
     pub backup_count: usize,
 }
 
@@ -89,20 +89,20 @@ impl Default for SaveOptions {
     }
 }
 
-/// Un progetto aperto, con i suoi profili di composizione.
+/// An open project, with its composition profiles.
 #[derive(Clone, Debug)]
 pub struct OpenedProject {
-    /// Dati del progetto.
+    /// Project data.
     pub project: Project,
-    /// Profili di esportazione.
+    /// Export profiles.
     pub profiles: ProfilesFile,
 }
 
 // ---------------------------------------------------------------------------
-// Apertura
+// Opening
 // ---------------------------------------------------------------------------
 
-/// Apre un progetto da file `.plotvale` o da cartella (rilevato dal percorso).
+/// Opens a project from a `.plotvale` file or a folder (detected from the path).
 pub fn open_any(path: &Path) -> Result<OpenedProject, ProjectError> {
     if path.is_dir() {
         open_folder(path)
@@ -111,14 +111,14 @@ pub fn open_any(path: &Path) -> Result<OpenedProject, ProjectError> {
     }
 }
 
-/// Apre un bundle `.plotvale`.
+/// Opens a `.plotvale` bundle.
 pub fn open_zip(path: &Path) -> Result<OpenedProject, ProjectError> {
     let file = File::open(path)?;
     let mut archive = ZipArchive::new(file).map_err(ProjectError::Zip)?;
     read_from_zip(&mut archive)
 }
 
-/// Apre una cartella progetto (modalità cartella).
+/// Opens a project folder (folder mode).
 pub fn open_folder(dir: &Path) -> Result<OpenedProject, ProjectError> {
     let read_json = |name: &str| -> Result<Vec<u8>, ProjectError> {
         fs::read(dir.join(name)).map_err(|_| ProjectError::MissingEntry(name.to_string()))
@@ -148,7 +148,7 @@ pub fn open_folder(dir: &Path) -> Result<OpenedProject, ProjectError> {
         snapshots: Default::default(),
         snapshot_texts: Default::default(),
     };
-    // Testi: testi/<ULID>.md
+    // Texts: testi/<ULID>.md
     let texts_dir = dir.join("testi");
     if texts_dir.is_dir() {
         for entry in fs::read_dir(&texts_dir)? {
@@ -168,7 +168,7 @@ pub fn open_folder(dir: &Path) -> Result<OpenedProject, ProjectError> {
             }
         }
     }
-    // Snapshot: snapshot/<doc>/<file>.md
+    // Snapshots: snapshot/<doc>/<file>.md
     let snaps_dir = dir.join("snapshot");
     project.snapshots = read_snapshot_metas_folder(&snaps_dir)?;
     project.snapshot_texts = read_snapshot_texts_folder(&snaps_dir)?;
@@ -221,7 +221,7 @@ fn read_from_zip(archive: &mut ZipArchive<File>) -> Result<OpenedProject, Projec
         snapshots: Default::default(),
         snapshot_texts: Default::default(),
     };
-    // Raccoglie i nomi prima (il borrow dell'archivio non permette altro).
+    // Collect names first (the archive borrow allows nothing else).
     let names: Vec<String> = archive.file_names().map(str::to_string).collect();
     for name in &names {
         if let Some(rest) = name.strip_prefix(entries::TEXTS_PREFIX) {
@@ -298,12 +298,12 @@ struct ParsedSnapshot {
     meta: plotvale_model::SnapshotMeta,
 }
 
-/// Ricostruisce i metadati di uno snapshot dal percorso `snapshot/<doc>/<file>.md`.
+/// Rebuilds a snapshot's metadata from its `snapshot/<doc>/<file>.md` path.
 fn snapshot_from_path(rest: &str) -> Option<ParsedSnapshot> {
     let (doc_str, file) = rest.split_once('/')?;
     let doc_id = doc_str.parse::<NodeId>().ok()?;
     let _ = file.strip_suffix(".md")?;
-    // Il formato è <id>-<etichetta>; l'id non contiene '-' (ULID Crockford).
+    // The format is <id>-<label>; the id holds no '-' (Crockford ULID).
     let (id, label) = file.split_once('-').unwrap_or((file, ""));
     Some(ParsedSnapshot {
         meta: plotvale_model::SnapshotMeta {
@@ -366,10 +366,10 @@ fn read_snapshot_texts_folder(
 }
 
 // ---------------------------------------------------------------------------
-// Salvataggio
+// Saving
 // ---------------------------------------------------------------------------
 
-/// Salva su file `.plotvale` o cartella (rilevato dal percorso).
+/// Saves to a `.plotvale` file or a folder (detected from the path).
 pub fn save_any(
     project: &mut Project,
     profiles: &ProfilesFile,
@@ -383,7 +383,7 @@ pub fn save_any(
     }
 }
 
-/// Salva un bundle `.plotvale` in modo atomico, con backup a rotazione.
+/// Saves a `.plotvale` bundle atomically, with rotating backups.
 pub fn save_zip(
     project: &mut Project,
     profiles: &ProfilesFile,
@@ -393,8 +393,8 @@ pub fn save_zip(
     project.touch();
     let tmp = tmp_sibling(path);
     write_zip(project, profiles, &tmp)?;
-    // Scarica su disco prima del rename: senza fsync un crash può perdere tutto.
-    // (Su Windows il flush richiede un handle in scrittura.)
+    // Flush to disk before rename: without fsync a crash can lose everything.
+    // (On Windows flushing needs a writable handle.)
     File::options().write(true).open(&tmp)?.sync_all()?;
     if path.exists() {
         backup_existing(path, opts.backup_count)?;
@@ -404,7 +404,7 @@ pub fn save_zip(
     Ok(())
 }
 
-/// Salva in una cartella (modalità cartella: comoda per Git e sync).
+/// Saves to a folder (folder mode: handy for Git and sync).
 pub fn save_folder(
     project: &mut Project,
     profiles: &ProfilesFile,
@@ -518,7 +518,7 @@ fn write_zip(project: &Project, profiles: &ProfilesFile, tmp: &Path) -> Result<(
     Ok(())
 }
 
-/// Nome della voce snapshot: `snapshot/<doc>/<id>-<etichetta>.md` (solo ASCII sicuri).
+/// Snapshot entry name: `snapshot/<doc>/<id>-<label>.md` (safe ASCII only).
 fn snapshot_entry_name(snap: &plotvale_model::SnapshotMeta) -> String {
     let safe: String = snap
         .label
@@ -540,15 +540,15 @@ fn snapshot_entry_name(snap: &plotvale_model::SnapshotMeta) -> String {
     format!("{}{}/{file}.md", entries::SNAPSHOTS_PREFIX, snap.doc_id)
 }
 
-/// File temporaneo fratello del progetto (`<nome>.plotvale.tmp`).
+/// Temp file next to the project (`<name>.plotvale.tmp`).
 pub fn tmp_sibling(path: &Path) -> PathBuf {
     let mut tmp = path.as_os_str().to_owned();
     tmp.push(".tmp");
     PathBuf::from(tmp)
 }
 
-/// Cerca un recupero dopo crash: un `.tmp` più recente del progetto (o senza progetto).
-/// Restituisce il percorso del file da aprire al posto dell'originale.
+/// Looks for crash recovery: a `.tmp` newer than the project (or with no project).
+/// Returns the path of the file to open instead of the original.
 pub fn find_recovery(path: &Path) -> Option<PathBuf> {
     let tmp = tmp_sibling(path);
     let tmp_meta = fs::metadata(&tmp).ok()?;
@@ -559,7 +559,7 @@ pub fn find_recovery(path: &Path) -> Option<PathBuf> {
     }
 }
 
-/// Directory dei backup (`<nome>-backups/` accanto al progetto).
+/// Backup directory (`<name>-backups/` next to the project).
 pub fn backup_dir(path: &Path) -> PathBuf {
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
     let stem = path
@@ -575,7 +575,7 @@ fn backup_existing(path: &Path, keep: usize) -> Result<(), ProjectError> {
     }
     let dir = backup_dir(path);
     fs::create_dir_all(&dir)?;
-    // Nanosecondi dall'epoca: unico anche per salvataggi ravvicinati e ordinabile.
+    // Nanoseconds since epoch: unique even for rapid saves, and sortable.
     let stamp = Utc::now().timestamp_nanos_opt().unwrap_or(0);
     let file_name = path
         .file_name()
@@ -583,7 +583,7 @@ fn backup_existing(path: &Path, keep: usize) -> Result<(), ProjectError> {
         .unwrap_or_else(|| "progetto.plotvale".to_string());
     let dest = dir.join(format!("{stamp}-{file_name}"));
     fs::copy(path, &dest)?;
-    // Potatura: tieni solo i `keep` più recenti.
+    // Prune: keep only the `keep` most recent.
     let mut backups: Vec<PathBuf> = fs::read_dir(&dir)?
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| p.is_file())

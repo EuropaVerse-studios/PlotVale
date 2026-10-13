@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Interfaccia grafica di PlotVale (eframe/egui)"
+description = "PlotVale graphical interface (eframe/egui)"
 
 [dependencies]
 plotvale-model.workspace = true

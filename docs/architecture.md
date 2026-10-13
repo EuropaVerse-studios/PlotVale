@@ -1,27 +1,27 @@
-# Architettura di PlotVale
+# PlotVale architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ apps/plotvale (eframe)   apps/plotvale-cli (clap)   │
 ├─────────────────────────────────────────────────────────┤
-│ crates/ui : binder, editor, cartellone, inspector, i18n │
+│ crates/ui: binder, editor, corkboard, inspector, i18n   │
 ├──────────┬──────────┬───────────┬────────────────────────┤
 │ search   │ compile  │  export   │ project                │
-│ indice,  │ sezioni, │ md/txt/   │ zip, atomico, backup,  │
-│ regex    │ blocchi  │ html/docx │ migrazioni             │
-│          │ profili  │ epub      │                        │
+│ index,   │ sections,│ md/txt/   │ zip, atomic, backups,  │
+│ regex    │ blocks   │ html/docx │ migrations             │
+│          │ profiles │ epub      │                        │
 ├──────────┴──────────┴───────────┴────────────────────────┤
-│ crates/model : albero, documenti, schede, conteggio      │
+│ crates/model: tree, documents, sheets, counting          │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **model** non sa nulla di file, GUI o rete: solo dati + invarianti + test.
-- **project** è l'unico punto che tocca il filesystem (un giorno: IndexedDB su WASM).
-- **compile** trasforma una selezione ordinata di nodi in `Compiled`
-  (titolo, autore, sezioni tipate, suggerimenti di impaginazione).
-- **export** renderizza `Compiled` in ogni formato: stesso contenuto ovunque.
-- **ui** tiene uno specchio del testo aperto (`DocView`) e riversa nel modello a ogni
-  modifica; l'autosalvataggio scatta dopo 3 s di inattività.
-- **Regole di conteggio parole** (`WordCounts`): una parola = sequenza con almeno un
-  carattere alfanumerico separata da spazi; `l'ho`, `dell'arte`, i numeri e i trattini
-  contano come una parola sola. Stessa regola ovunque (editor, obiettivi, statistiche).
+- **model** knows nothing about files, GUI, or network: data + invariants + tests only.
+- **project** is the only place that touches the filesystem (one day: IndexedDB on WASM).
+- **compile** turns an ordered node selection into `Compiled`
+  (title, author, typed sections, layout hints).
+- **export** renders `Compiled` into every format: same content everywhere.
+- **ui** keeps a mirror of the open text (`DocView`) and flushes it into the model on
+  every change; autosave fires after 3 s of idle time.
+- **Word-count rules** (`WordCounts`): a word = a run with at least one alphanumeric
+  character separated by whitespace; `don't`, numbers, and hyphenated forms each count
+  as a single word. Same rule everywhere (editor, goals, statistics).

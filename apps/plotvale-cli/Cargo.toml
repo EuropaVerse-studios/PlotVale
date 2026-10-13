@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "PlotVale a riga di comando: new, verify, stats, export"
+description = "PlotVale command line: new, verify, stats, export"
 
 [[bin]]
 name = "plotvale-cli"

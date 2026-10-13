@@ -1,22 +1,22 @@
-//! Regole di conteggio parole di PlotVale.
+//! PlotVale word-count rules.
 //!
-//! Una sola definizione, usata ovunque (editor, obiettivi, statistiche, export):
-//! una parola è una sequenza separata da spazi che contiene almeno un carattere
-//! alfanumerico. Così `l'ho`, `dell'arte`, i numeri e le parole con trattino contano
-//! come una parola sola — come si aspetta uno scrittore italiano.
+//! A single definition, used everywhere (editor, goals, statistics, export):
+//! a word is a whitespace-separated run containing at least one alphanumeric
+//! character. So `don't`, numbers, and hyphenated words each count as one
+//! word — as writers expect.
 
 use serde::{Deserialize, Serialize};
 
-/// Statistiche di un testo.
+/// Statistics of a text.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WordCounts {
-    /// Parole secondo le regole di PlotVale.
+    /// Words under the PlotVale rules.
     pub words: usize,
-    /// Caratteri Unicode (codepoint), spazi inclusi.
+    /// Unicode characters (codepoints), spaces included.
     pub characters: usize,
-    /// Caratteri senza spazi bianchi.
+    /// Characters without whitespace.
     pub characters_no_spaces: usize,
-    /// Paragrafi (blocchi separati da righe vuote).
+    /// Paragraphs (blocks separated by blank lines).
     pub paragraphs: usize,
 }
 
@@ -39,7 +39,7 @@ impl std::iter::Sum for WordCounts {
     }
 }
 
-/// Conta le parole di un testo secondo le regole di PlotVale.
+/// Counts the words of a text under the PlotVale rules.
 pub fn count_words(text: &str) -> WordCounts {
     let words = text
         .split_whitespace()
@@ -67,10 +67,10 @@ mod tests {
 
     #[test]
     fn italian_rules() {
-        // l'ho = 1 parola; numeri e trattini = 1 parola; punteggiatura sola = 0.
+        // don't = 1 word; numbers and hyphens = 1 word; punctuation alone = 0.
         let c = count_words("l'ho detto — ben 3 volte — all'amico.");
         assert_eq!(c.words, 6);
-        // "—" da solo non è una parola.
+        // A lone "—" is not a word.
         assert_eq!(count_words("—").words, 0);
         assert_eq!(count_words("").words, 0);
     }
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn markdown_markers_do_not_inflate() {
-        // I marker di formattazione isolati non sono parole.
+        // Lone formatting markers are not words.
         assert_eq!(count_words("**grassetto** e *corsivo*").words, 3);
         assert_eq!(count_words("# Titolo").words, 1);
     }

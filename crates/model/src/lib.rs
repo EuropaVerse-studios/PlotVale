@@ -1,8 +1,8 @@
-//! `plotvale-model` — il cuore dati di PlotVale.
+//! `plotvale-model` — the data heart of PlotVale.
 //!
-//! Qui vivono l'albero del progetto, i documenti, le schede, gli obiettivi e le
-//! regole di conteggio parole. Questo crate non tocca file, rete o GUI: solo dati,
-//! invarianti e test. Tutto ciò che l'utente scrive passa di qui.
+//! Home of the project tree, documents, sheets, goals, and word-count rules.
+//! This crate touches no files, network, or GUI: data, invariants, and tests only.
+//! Everything the user writes flows through here.
 
 mod count;
 mod project;
@@ -15,8 +15,8 @@ pub use project::{
 };
 pub use tree::{DocStatus, Node, NodeKind, NodeMeta, Tree, TreeError};
 
-/// Identificatore stabile di un nodo. Non cambia mai, nemmeno se rinomini o sposti
-/// l'elemento: è la base di snapshot, backup e file `testi/<id>.md` affidabili.
+/// Stable identifier of a node. It never changes, even if you rename or move
+/// the item: the basis for reliable snapshots, backups, and `testi/<id>.md` files.
 #[derive(
     Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug, serde::Serialize, serde::Deserialize,
 )]
@@ -24,7 +24,7 @@ pub use tree::{DocStatus, Node, NodeKind, NodeMeta, Tree, TreeError};
 pub struct NodeId(pub ulid::Ulid);
 
 impl NodeId {
-    /// Nuovo identificatore casuale ordinabile per tempo di creazione.
+    /// New random identifier, sortable by creation time.
     pub fn new() -> Self {
         Self(ulid::Ulid::new())
     }

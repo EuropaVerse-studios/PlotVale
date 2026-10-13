@@ -1,32 +1,32 @@
-//! Mini-diff a righe per rivedere gli snapshot.
+//! Mini line-diff for reviewing snapshots.
 //!
-//! Taglia prefisso/suffisso comuni e applica LCS sulla parte centrale (limitata):
-//! abbastanza per rivedere una scena, senza strutture dati pesanti.
+//! Trims the common prefix/suffix and runs LCS on the (bounded) middle part:
+//! enough to review a scene, without heavy data structures.
 
-/// Una riga del confronto.
+/// One line of the comparison.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DiffLine {
-    /// Invariata.
+    /// Unchanged.
     Same(String),
-    /// Presente solo nel vecchio testo.
+    /// Only in the old text.
     Del(String),
-    /// Presente solo nel nuovo testo.
+    /// Only in the new text.
     Add(String),
 }
 
-/// Limite di righe per la LCS centrale (oltre: blocco unico cancellato/aggiunto).
+/// Line limit for the middle LCS (beyond: single deleted/added block).
 const LCS_LIMIT: usize = 400;
 
-/// Confronta due testi riga per riga.
+/// Compares two texts line by line.
 pub fn diff_lines(old: &str, new: &str) -> Vec<DiffLine> {
     let a: Vec<&str> = old.lines().collect();
     let b: Vec<&str> = new.lines().collect();
-    // Prefisso comune.
+    // Common prefix.
     let mut pre = 0;
     while pre < a.len() && pre < b.len() && a[pre] == b[pre] {
         pre += 1;
     }
-    // Suffisso comune.
+    // Common suffix.
     let mut suf = 0;
     while suf < a.len() - pre && suf < b.len() - pre && a[a.len() - 1 - suf] == b[b.len() - 1 - suf]
     {

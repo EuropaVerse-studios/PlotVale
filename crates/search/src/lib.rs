@@ -1,9 +1,8 @@
-//! `plotvale-search` — ricerca in tutto il progetto.
+//! `plotvale-search` — project-wide search.
 //!
-//! Un [`Index`] leggero ricostruito all'apertura (e aggiornato alla modifica):
-//! ricerca semplice o con espressioni regolari, con estratti di contesto.
-//! Le [`SavedQuery`] sono ricerche nominate che si rivalutano da sole
-//! (le "collezioni" di PlotVale).
+//! A light [`Index`] rebuilt on open (and updated on edit): plain or
+//! regular-expression search, with context snippets. [`SavedQuery`] items are
+//! named searches that re-evaluate on their own (PlotVale "collections").
 
 use regex::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
@@ -11,53 +10,53 @@ use thiserror::Error;
 
 use plotvale_model::{NodeId, Project};
 
-/// Errori di ricerca.
+/// Search errors.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SearchError {
-    /// Espressione regolare non valida.
-    #[error("espressione regolare non valida: {0}")]
+    /// Invalid regular expression.
+    #[error("invalid regular expression: {0}")]
     BadRegex(String),
 }
 
-/// Opzioni di una ricerca.
+/// Search options.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SearchOptions {
-    /// Distingue maiuscole/minuscole.
+    /// Case sensitive.
     pub case_sensitive: bool,
-    /// Interpreta il testo come regex.
+    /// Interprets the text as regex.
     pub regex: bool,
 }
 
-/// Un'occorrenza trovata.
+/// One match found.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hit {
-    /// Documento contenente l'occorrenza.
+    /// Document holding the match.
     pub doc_id: NodeId,
-    /// Riga (da 1).
+    /// Line (from 1).
     pub line_no: usize,
-    /// Colonna in caratteri (da 1).
+    /// Column in characters (from 1).
     pub col: usize,
-    /// Estratto della riga con contesto.
+    /// Line excerpt with context.
     pub excerpt: String,
 }
 
-/// Ricerca salvata (collezione dinamica).
+/// Saved search (dynamic collection).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SavedQuery {
-    /// Nome mostrato nella lista.
+    /// Name shown in the list.
     pub name: String,
-    /// Testo o regex da cercare.
+    /// Text or regex to search.
     pub pattern: String,
-    /// Se `true`, è un'espressione regolare.
+    /// If `true`, a regular expression.
     #[serde(default)]
     pub regex: bool,
-    /// Se `true`, distingue maiuscole/minuscole.
+    /// If `true`, case sensitive.
     #[serde(default)]
     pub case_sensitive: bool,
 }
 
 impl SavedQuery {
-    /// Valuta la ricerca sul progetto corrente.
+    /// Evaluates the search on the current project.
     pub fn evaluate(&self, index: &Index) -> Result<Vec<Hit>, SearchError> {
         index.search(
             &self.pattern,
@@ -69,7 +68,7 @@ impl SavedQuery {
     }
 }
 
-/// Indice di ricerca: righe dei documenti fuori dal cestino.
+/// Search index: lines of documents outside trash.
 #[derive(Clone, Debug, Default)]
 pub struct Index {
     docs: Vec<IndexedDoc>,
@@ -83,7 +82,7 @@ struct IndexedDoc {
 }
 
 impl Index {
-    /// Costruisce l'indice dai documenti del progetto (cestino escluso).
+    /// Builds the index from project documents (trash excluded).
     pub fn build(project: &Project) -> Self {
         let mut docs = Vec::new();
         for id in project.tree.ids() {
@@ -108,17 +107,17 @@ impl Index {
         Self { docs }
     }
 
-    /// Numero di documenti indicizzati.
+    /// Number of indexed documents.
     pub fn len(&self) -> usize {
         self.docs.len()
     }
 
-    /// `true` se non c'è nulla da cercare.
+    /// `true` if there is nothing to search.
     pub fn is_empty(&self) -> bool {
         self.docs.is_empty()
     }
 
-    /// Cerca il pattern. Al massimo 5000 risultati (protegge l'interfaccia).
+    /// Searches the pattern. At most 5000 results (protects the interface).
     pub fn search(&self, pattern: &str, opts: SearchOptions) -> Result<Vec<Hit>, SearchError> {
         if pattern.is_empty() {
             return Ok(Vec::new());
@@ -126,7 +125,7 @@ impl Index {
         let matcher = Matcher::compile(pattern, opts)?;
         let mut hits = Vec::new();
         for doc in &self.docs {
-            // Cerca anche nel titolo del documento.
+            // Also searches the document title.
             for (line_no, line) in std::iter::once(&doc.title)
                 .chain(doc.lines.iter())
                 .enumerate()
@@ -177,7 +176,7 @@ impl Matcher {
         }
     }
 
-    /// Occorrenze come (inizio_byte, fine_byte) sulla riga.
+    /// Matches as (start_byte, end_byte) on the line.
     fn find_all(&self, line: &str) -> Vec<(usize, usize)> {
         match self {
             Self::Regex(re) => re.find_iter(line).map(|m| (m.start(), m.end())).collect(),
@@ -208,7 +207,7 @@ impl Matcher {
     }
 }
 
-/// Estratto di ~80 caratteri attorno all'occorrenza.
+/// ~80-character excerpt around the match.
 fn excerpt(line: &str, start: usize, end: usize) -> String {
     let chars: Vec<char> = line.chars().collect();
     let byte_to_char = |byte: usize| line[..byte.min(line.len())].chars().count();

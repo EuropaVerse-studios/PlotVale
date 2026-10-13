@@ -1,43 +1,43 @@
-//! Internazionalizzazione minima: due dizionari piatti (IT/EN).
+//! Minimal internationalization: two flat dictionaries (EN/IT).
 //!
-//! Ogni stringa visibile passa da [`Locale::get`]. Se una chiave manca, si mostra la
-//! chiave stessa (mai un crash): i buchi si trovano con
-//! `cargo run -p xtask -- check-locales` e con il test `locales_have_same_keys`.
+//! Every visible string goes through [`Locale::get`]. A missing key renders as
+//! the key itself (never a crash): gaps are caught by
+//! `cargo run -p xtask -- check-locales` and the `locales_have_same_keys` test.
 
 use std::collections::HashMap;
 
-/// Lingua dell'interfaccia con il suo dizionario.
+/// Interface language with its dictionary.
 #[derive(Clone, Debug)]
 pub struct Locale {
-    /// Codice lingua (`it`, `en`).
+    /// Language code (`it`, `en`).
     pub code: String,
     strings: HashMap<String, String>,
 }
 
 impl Locale {
-    /// Italiano (lingua predefinita).
+    /// Italian (default language).
     pub fn italian() -> Self {
         Self::from_json("it", include_str!("../../../locales/it.json"))
     }
 
-    /// Inglese.
+    /// English.
     pub fn english() -> Self {
         Self::from_json("en", include_str!("../../../locales/en.json"))
     }
 
     fn from_json(code: &str, json: &str) -> Self {
         let strings: HashMap<String, String> =
-            serde_json::from_str(json).expect("locales/*.json non valido");
+            serde_json::from_str(json).expect("invalid locales/*.json");
         Self {
             code: code.to_string(),
             strings,
         }
     }
 
-    /// Restituisce la stringa per la chiave, o la chiave stessa se manca.
+    /// Returns the string for the key, or the key itself if missing.
     ///
-    /// La chiave è `&'static str`: tutte le stringhe dell'interfaccia sono letterali
-    /// (vedi `CONTRIBUTING.md`), così non serve allocare a ogni frame.
+    /// The key is `&'static str`: all interface strings are literals
+    /// (see `CONTRIBUTING.md`), so no per-frame allocation is needed.
     pub fn get(&self, key: &'static str) -> &str {
         self.strings.get(key).map(String::as_str).unwrap_or(key)
     }
@@ -60,7 +60,7 @@ mod tests {
         let only_en: Vec<_> = en.difference(&it).collect();
         assert!(
             only_it.is_empty() && only_en.is_empty(),
-            "chiavi non allineate — solo IT: {only_it:?}, solo EN: {only_en:?}"
+            "misaligned keys — only IT: {only_it:?}, only EN: {only_en:?}"
         );
         assert!(!it.is_empty());
     }
@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn missing_key_returns_key() {
         let locale = Locale::italian();
-        assert_eq!(locale.get("chiave_che_non_esiste"), "chiave_che_non_esiste");
+        assert_eq!(locale.get("nonexistent_key"), "nonexistent_key");
         assert_eq!(locale.get("menu_file"), "File");
     }
 }

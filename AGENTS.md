@@ -1,42 +1,42 @@
-# AGENTS.md — regole di lavoro per agenti e contributori
+# AGENTS.md — working rules for agents and contributors
 
-## Direzione del progetto
+## Project direction
 
-PlotVale = alternativa libera a Scrivener per romanzieri e scrittori amatoriali.
-Priorità: (1) non perdere mai il testo dell'utente, (2) restare semplice per un
-dilettante, (3) zero lock-in sul formato. In caso di conflitto, vince l'ordine sopra.
+PlotVale = a libre Scrivener alternative for novelists and hobbyist writers.
+Priorities: (1) never lose the user's text, (2) stay simple for a beginner,
+(3) zero format lock-in. In case of conflict, the order above wins.
 
-## Architettura (non negoziabile senza discussione)
+## Architecture (non-negotiable without discussion)
 
-- Core senza GUI: `model` → `project` → `search`/`compile` → `export`. `ui` dipende
-  dal core, mai il contrario. Niente `std::fs` nel core: l'I/O passa per
-  `plotvale-project` (astrazione pronta per WASM/IndexedDB).
-- Il motore di composizione (`compile`) è l'unica fonte di verità per gli export:
-  nessun renderer inventa contenuti.
-- Formato `.plotvale` v1: vedi `docs/format-spec.md`. Cambi al formato = bump di
-  `schema_version` + migrazione testata su fixture vecchia.
+- GUI-less core: `model` → `project` → `search`/`compile` → `export`. `ui` depends
+  on the core, never the other way around. No `std::fs` in the core: I/O goes
+  through `plotvale-project` (abstraction ready for WASM/IndexedDB).
+- The composition engine (`compile`) is the single source of truth for exports:
+  no renderer invents content.
+- `.plotvale` format v1: see `docs/format-spec.md`. Format changes = bump
+  `schema_version` + migration tested against an old fixture.
 
-## Qualità
+## Quality
 
-- `cargo fmt --check` pulito; `cargo clippy --workspace -- -D warnings` pulito;
-  `unsafe` vietato; niente `unwrap` su input utente.
-- Test per ogni crate del core; proptest per invarianti (albero, buffer, round-trip);
-  golden file per gli export (confronto byte a byte).
-- UI: ogni stringa via `t("chiave")` + voci IT/EN; parità verificata da
-  `cargo run -p xtask -- check-locales` e dal test `locales_have_same_keys`.
+- `cargo fmt --check` clean; `cargo clippy --workspace -- -D warnings` clean;
+  `unsafe` forbidden; no `unwrap` on user input.
+- Tests for every core crate; proptests for invariants (tree, buffer, round-trip);
+  golden files for exports (byte-for-byte comparison).
+- UI: every string via `t("key")` + EN/IT entries; parity enforced by
+  `cargo run -p xtask -- check-locales` and the `locales_have_same_keys` test.
 
-## Comandi
+## Commands
 
 ```sh
 cargo run -p plotvale                 # GUI
 cargo run -p plotvale-cli -- --help   # CLI
-cargo test --workspace                  # test
+cargo test --workspace                  # tests
 cargo clippy --workspace -- -D warnings # lint
-cargo run -p xtask -- check-locales     # parita' traduzioni
+cargo run -p xtask -- check-locales     # translation parity
 ```
 
-## Limiti
+## Limits
 
-- Nessun push, tag, release o deploy senza richiesta esplicita dell'utente.
-- Niente nuove dipendenze pesanti senza motivo documentato (build time e WASM contano).
-- Niente dizionari/asset con licenza non verificata nel repository (vedi ATTRIBUTION.md).
+- No push, tag, release, or deploy without the user's explicit request.
+- No heavy new dependencies without documented reason (build time and WASM matter).
+- No dictionaries/assets with unverified licenses in the repository (see ATTRIBUTION.md).

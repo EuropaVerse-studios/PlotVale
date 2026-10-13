@@ -1,7 +1,7 @@
-//! `plotvale-export` — renderer di esportazione.
+//! `plotvale-export` — export renderers.
 //!
-//! Ogni formato renderizza lo stesso [`Compiled`] prodotto dal motore di
-//! composizione: il contenuto non cambia mai tra DOCX, EPUB e gli altri.
+//! Every format renders the same [`Compiled`] produced by the composition
+//! engine: content never changes between DOCX, EPUB, and the rest.
 
 use std::fmt::Write as _;
 use std::io::Cursor;
@@ -11,28 +11,28 @@ use thiserror::Error;
 
 use plotvale_compile::{Block, Compiled, Inline, SectionKind};
 
-/// Errori di esportazione.
+/// Export errors.
 #[derive(Debug, Error)]
 pub enum ExportError {
-    /// Scrittura del file di output.
-    #[error("scrittura del file: {0}")]
+    /// Output file write.
+    #[error("file write: {0}")]
     Io(#[from] std::io::Error),
-    /// Errore del generatore DOCX.
-    #[error("generazione DOCX: {0}")]
+    /// DOCX generator error.
+    #[error("DOCX generation: {0}")]
     Docx(String),
-    /// Errore del generatore EPUB.
-    #[error("generazione EPUB: {0}")]
+    /// EPUB generator error.
+    #[error("EPUB generation: {0}")]
     Epub(String),
 }
 
-/// Formati di esportazione supportati.
+/// Supported export formats.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExportFormat {
     /// Markdown.
     Md,
-    /// Testo semplice.
+    /// Plain text.
     Txt,
-    /// HTML autonomo con indice.
+    /// Standalone HTML with index.
     Html,
     /// Word (.docx).
     Docx,
@@ -41,7 +41,7 @@ pub enum ExportFormat {
 }
 
 impl ExportFormat {
-    /// Estensione del file (senza punto).
+    /// File extension (no dot).
     pub fn extension(self) -> &'static str {
         match self {
             Self::Md => "md",
@@ -52,7 +52,7 @@ impl ExportFormat {
         }
     }
 
-    /// Nome mostrato nei menu.
+    /// Name shown in menus.
     pub fn display_name(self) -> &'static str {
         match self {
             Self::Md => "Markdown (.md)",
@@ -63,7 +63,7 @@ impl ExportFormat {
         }
     }
 
-    /// Tutti i formati, in ordine di menu.
+    /// All formats, in menu order.
     pub fn all() -> &'static [Self] {
         &[Self::Md, Self::Txt, Self::Html, Self::Docx, Self::Epub]
     }
@@ -79,12 +79,12 @@ impl FromStr for ExportFormat {
             "html" | "htm" => Ok(Self::Html),
             "docx" => Ok(Self::Docx),
             "epub" => Ok(Self::Epub),
-            other => Err(format!("formato sconosciuto: {other}")),
+            other => Err(format!("unknown format: {other}")),
         }
     }
 }
 
-/// Renderizza un manoscritto composto nel formato richiesto.
+/// Renders a compiled manuscript in the requested format.
 pub fn render(compiled: &Compiled, format: ExportFormat) -> Result<Vec<u8>, ExportError> {
     match format {
         ExportFormat::Md => Ok(render_md(compiled).into_bytes()),
@@ -95,7 +95,7 @@ pub fn render(compiled: &Compiled, format: ExportFormat) -> Result<Vec<u8>, Expo
     }
 }
 
-/// Renderizza e scrive il file di output.
+/// Renders and writes the output file.
 pub fn export_to_file(
     compiled: &Compiled,
     format: ExportFormat,
@@ -106,7 +106,7 @@ pub fn export_to_file(
 }
 
 // ---------------------------------------------------------------------------
-// Inline per formato
+// Per-format inlines
 // ---------------------------------------------------------------------------
 
 fn inline_md(items: &[Inline]) -> String {
@@ -309,7 +309,7 @@ fn render_html(compiled: &Compiled) -> String {
             escape_html(&compiled.author)
         );
     }
-    // Indice.
+    // Index.
     out.push_str("<nav><ul>\n");
     for (i, section) in compiled.sections.iter().enumerate() {
         if section.kind == SectionKind::Chapter {
@@ -401,7 +401,7 @@ fn render_html(compiled: &Compiled) -> String {
 fn render_docx(compiled: &Compiled) -> Result<Vec<u8>, ExportError> {
     use docx_rs::{AlignmentType, BreakType, Docx, Paragraph, Run};
 
-    /// Mezza punti tipografici (unità di docx-rs): 24 = 12 pt.
+    /// Half typographic points (docx-rs unit): 24 = 12 pt.
     fn run(items: &[Inline], size: usize, bold: bool, italic: bool) -> Vec<Run> {
         let mut runs = Vec::new();
         fn push(runs: &mut Vec<Run>, text: &str, size: usize, bold: bool, italic: bool) {
@@ -583,7 +583,7 @@ fn render_epub(compiled: &Compiled) -> Result<Vec<u8>, ExportError> {
         .metadata("lang", "it")
         .map_err(|e| ExportError::Epub(e.to_string()))?;
 
-    // Frontespizio.
+    // Title page.
     let mut cover = format!("<h1>{}</h1>", escape_html(&compiled.title));
     if !compiled.author.trim().is_empty() {
         let _ = write!(cover, "<p>{}</p>", escape_html(&compiled.author));
@@ -598,8 +598,8 @@ fn render_epub(compiled: &Compiled) -> Result<Vec<u8>, ExportError> {
         )
         .map_err(|e| ExportError::Epub(e.to_string()))?;
 
-    // Raggruppa le sezioni in file: dedica e capitoli aprono un file nuovo,
-    // le scene si accodano al file corrente (ogni file è aggiunto una sola volta).
+    // Groups sections into files: dedication and chapters open a new file,
+    // scenes append to the current file (each file added only once).
     let mut footnotes: Vec<(String, String)> = Vec::new();
     let mut files: Vec<(String, String)> = Vec::new();
     let mut cur_title = String::new();

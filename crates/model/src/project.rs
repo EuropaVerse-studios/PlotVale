@@ -1,36 +1,36 @@
-//! Documento di progetto: manifest, testi, schede, obiettivi, snapshot.
+//! Project document: manifest, texts, sheets, goals, snapshots.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::{NodeId, Tree, WordCounts, count_words};
 
-/// Versione corrente del formato (vedi `docs/format-spec.md`).
+/// Current format version (see `docs/format-spec.md`).
 pub const SCHEMA_VERSION: u32 = 1;
 
-/// Timestamp RFC 3339 in UTC, per manifest, snapshot e documenti.
+/// RFC 3339 UTC timestamp, for manifest, snapshots, and documents.
 pub fn now_stamp() -> String {
     chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
 }
 
-/// Intestazione del progetto (`plotvale.json`).
+/// Project header (`plotvale.json`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Manifest {
-    /// Versione dello schema del formato.
+    /// Format schema version.
     pub schema_version: u32,
-    /// Versione dell'app che ha salvato per ultima.
+    /// Version of the app that saved last.
     pub app_version: String,
-    /// Titolo dell'opera.
+    /// Title of the work.
     pub title: String,
-    /// Autore.
+    /// Author.
     #[serde(default)]
     pub author: String,
-    /// Lingua principale (`it`, `en`, …).
+    /// Primary language (`it`, `en`, …).
     #[serde(default = "default_language")]
     pub language: String,
-    /// Creazione del progetto.
+    /// Project creation.
     pub created_at: String,
-    /// Ultimo salvataggio.
+    /// Last save.
     pub updated_at: String,
 }
 
@@ -38,19 +38,19 @@ fn default_language() -> String {
     "it".to_string()
 }
 
-/// Testo di un documento, con data di ultima modifica.
+/// A document's text, with last-modified date.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Doc {
-    /// Testo Markdown del documento.
+    /// Document Markdown text.
     #[serde(default)]
     pub text: String,
-    /// Ultima modifica (RFC 3339).
+    /// Last modified (RFC 3339).
     #[serde(default)]
     pub updated_at: String,
 }
 
 impl Doc {
-    /// Crea un documento con il testo dato.
+    /// Creates a document with the given text.
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
@@ -58,164 +58,164 @@ impl Doc {
         }
     }
 
-    /// Statistiche del documento.
+    /// Document statistics.
     pub fn counts(&self) -> WordCounts {
         count_words(&self.text)
     }
 }
 
-/// Definizione di un campo personalizzato (`metadati.json`).
+/// Custom field definition (`metadati.json`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CustomField {
-    /// Nome del campo.
+    /// Field name.
     pub name: String,
-    /// Suggerimento mostrato nell'inspector.
+    /// Hint shown in the inspector.
     #[serde(default)]
     pub hint: String,
 }
 
-/// Ricerca salvata (collezione dinamica) persistita in `metadati.json`.
+/// Saved search (dynamic collection) persisted in `metadati.json`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectionDef {
-    /// Nome mostrato nella lista.
+    /// Name shown in the list.
     pub name: String,
-    /// Testo o regex da cercare.
+    /// Text or regex to search.
     #[serde(default)]
     pub pattern: String,
-    /// Se `true`, è un'espressione regolare.
+    /// If `true`, a regular expression.
     #[serde(default)]
     pub regex: bool,
-    /// Se `true`, distingue maiuscole/minuscole.
+    /// If `true`, case sensitive.
     #[serde(default)]
     pub case_sensitive: bool,
 }
 
-/// Metadati globali del progetto (`metadati.json`).
+/// Project-global metadata (`metadati.json`).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectMeta {
-    /// Parole chiave disponibili in tutto il progetto.
+    /// Keywords available across the project.
     #[serde(default)]
     pub keywords: Vec<String>,
-    /// Ricerche salvate (collezioni).
+    /// Saved searches (collections).
     #[serde(default)]
     pub collections: Vec<CollectionDef>,
-    /// Campi personalizzati definibili dall'utente.
+    /// User-definable custom fields.
     #[serde(default)]
     pub custom_fields: Vec<CustomField>,
-    /// Note libere sul progetto.
+    /// Free notes on the project.
     #[serde(default)]
     pub notes: String,
 }
 
-/// Scheda di un personaggio.
+/// A character's sheet.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CharacterSheet {
-    /// Id del nodo scheda corrispondente nell'albero.
+    /// Id of the matching sheet node in the tree.
     pub node_id: NodeId,
-    /// Nome del personaggio.
+    /// Character name.
     pub name: String,
-    /// Ruolo nella storia.
+    /// Role in the story.
     #[serde(default)]
     pub role: String,
-    /// Descrizione libera.
+    /// Free description.
     #[serde(default)]
     pub description: String,
-    /// Obiettivo del personaggio.
+    /// Character goal.
     #[serde(default)]
     pub goal: String,
-    /// Conflitto principale.
+    /// Main conflict.
     #[serde(default)]
     pub conflict: String,
-    /// Risposte al questionario guidato (domanda → risposta).
+    /// Guided-questionnaire answers (question → answer).
     #[serde(default)]
     pub questionnaire: HashMap<String, String>,
 }
 
-/// Scheda di un luogo.
+/// A location's sheet.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocationSheet {
-    /// Id del nodo scheda corrispondente nell'albero.
+    /// Id of the matching sheet node in the tree.
     pub node_id: NodeId,
-    /// Nome del luogo.
+    /// Location name.
     pub name: String,
-    /// Descrizione libera.
+    /// Free description.
     #[serde(default)]
     pub description: String,
-    /// Dettagli sensoriali (visti, suoni, odori…).
+    /// Sensory details (sights, sounds, smells…).
     #[serde(default)]
     pub sensory: String,
-    /// Appunti liberi.
+    /// Free memos.
     #[serde(default)]
     pub notes: String,
 }
 
-/// Schede del progetto.
+/// Project sheets.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Sheets {
-    /// Schede personaggio.
+    /// Character sheets.
     #[serde(default)]
     pub characters: Vec<CharacterSheet>,
-    /// Schede luogo.
+    /// Location sheets.
     #[serde(default)]
     pub locations: Vec<LocationSheet>,
 }
 
-/// Obiettivi di scrittura (`obiettivi.json`).
+/// Writing goals (`obiettivi.json`).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Targets {
-    /// Obiettivo del progetto in parole (`None` = disattivato).
+    /// Project goal in words (`None` = disabled).
     #[serde(default)]
     pub project_goal_words: Option<u64>,
-    /// Obiettivo giornaliero in parole (`None` = disattivato).
+    /// Daily goal in words (`None` = disabled).
     #[serde(default)]
     pub daily_goal_words: Option<u64>,
-    /// Parole scritte nella data indicata.
+    /// Words written on the given date.
     #[serde(default)]
     pub words_today: u64,
-    /// Data (AAAA-MM-GG) a cui si riferisce `words_today`.
+    /// Date (YYYY-MM-DD) that `words_today` refers to.
     #[serde(default)]
     pub words_today_date: Option<String>,
 }
 
-/// Voce di versione salvata di un documento (lo snapshot vero è in `snapshot/`).
+/// Saved version entry of a document (the real snapshot lives in `snapshot/`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SnapshotMeta {
-    /// Id dello snapshot (usato nel nome file).
+    /// Snapshot id (used in the file name).
     pub id: String,
-    /// Documento a cui appartiene.
+    /// Document it belongs to.
     pub doc_id: NodeId,
-    /// Creazione (RFC 3339).
+    /// Creation (RFC 3339).
     pub created_at: String,
-    /// Etichetta data dall'utente.
+    /// User-given label.
     #[serde(default)]
     pub label: String,
 }
 
-/// Un progetto PlotVale completo, in memoria.
+/// A complete PlotVale project, in memory.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Project {
-    /// Intestazione.
+    /// Header.
     pub manifest: Manifest,
-    /// Albero dei nodi.
+    /// Node tree.
     pub tree: Tree,
-    /// Testi indicizzati per id di nodo.
+    /// Texts indexed by node id.
     pub docs: HashMap<NodeId, Doc>,
-    /// Metadati globali.
+    /// Global metadata.
     pub meta: ProjectMeta,
-    /// Schede personaggi e luoghi.
+    /// Character and location sheets.
     pub sheets: Sheets,
-    /// Obiettivi.
+    /// Goals.
     pub targets: Targets,
-    /// Elenco snapshot (i testi viaggiano a parte, vedi formato).
+    /// Snapshot list (texts travel separately, see format).
     #[serde(default)]
     pub snapshots: Vec<SnapshotMeta>,
-    /// Testi degli snapshot per id (non serializzati nel JSON: vivono in `snapshot/`).
+    /// Snapshot texts by id (not serialized in JSON: they live in `snapshot/`).
     #[serde(skip)]
     pub snapshot_texts: HashMap<String, String>,
 }
 
 impl Project {
-    /// Crea un progetto con manoscritto, ricerca e cestino, più una scena d'esempio.
+    /// Creates a project with manuscript, research, and trash, plus an example scene.
     pub fn new(title: &str, author: &str, app_version: &str) -> Self {
         let tree = Tree::new("Manoscritto", "Ricerca", "Cestino");
         let stamp = now_stamp();
@@ -240,22 +240,22 @@ impl Project {
         let draft = project.tree.draft_root;
         let chapter = project
             .tree
-            .create(draft, crate::NodeKind::Folder, "Capitolo 1")
-            .expect("albero appena creato");
+            .create(draft, crate::NodeKind::Folder, "Chapter 1")
+            .expect("freshly created tree");
         let scene = project
             .tree
-            .create(chapter, crate::NodeKind::Scene, "Scena 1")
-            .expect("albero appena creato");
+            .create(chapter, crate::NodeKind::Scene, "Scene 1")
+            .expect("freshly created tree");
         project.docs.insert(
             scene,
             Doc::new(
-                "Era una notte buia e tempestosa…\n\nTocca a te: cancella e inizia la tua storia.",
+                "It was a dark and stormy night…\n\nYour turn: delete this and start your story.",
             ),
         );
         project
     }
 
-    /// Testo di un documento (stringa vuota se il nodo non ha testo).
+    /// A document's text (empty string if the node has no text).
     pub fn doc_text(&self, id: NodeId) -> &str {
         self.docs
             .get(&id)
@@ -263,7 +263,7 @@ impl Project {
             .unwrap_or("")
     }
 
-    /// Imposta il testo di un documento, creandolo se serve.
+    /// Sets a document's text, creating it if needed.
     pub fn set_doc_text(&mut self, id: NodeId, text: &str) {
         self.docs.entry(id).or_insert_with(|| Doc::new("")).text = text.to_string();
         if let Some(doc) = self.docs.get_mut(&id) {
@@ -272,7 +272,7 @@ impl Project {
         self.touch();
     }
 
-    /// Parole totali di tutti i documenti fuori dal cestino.
+    /// Total words of all documents outside trash.
     pub fn total_words(&self) -> usize {
         self.tree
             .ids()
@@ -281,7 +281,7 @@ impl Project {
             .sum()
     }
 
-    /// Parole di un sottoalbero (capitolo, cartella…), cestino escluso.
+    /// Words of a subtree (chapter, folder…), trash excluded.
     pub fn subtree_words(&self, id: NodeId) -> usize {
         self.tree
             .subtree_ids(id)
@@ -291,7 +291,7 @@ impl Project {
             .sum()
     }
 
-    /// Aggiorna il timestamp di ultima modifica.
+    /// Refreshes the last-modified timestamp.
     pub fn touch(&mut self) {
         self.manifest.updated_at = now_stamp();
     }

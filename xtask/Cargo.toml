@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Automazioni di PlotVale"
+description = "PlotVale automation tasks"
 publish = false
 
 [[bin]]
