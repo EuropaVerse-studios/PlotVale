@@ -158,8 +158,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let ids = expand_selection(&opened.project, &[]);
             let compiled =
                 compile(&opened.project, &ids, &prof).map_err(|e| format!("compile: {e}"))?;
-            export_to_file(&compiled, format, &out)
-                .map_err(|e| format!("export failed: {e}"))?;
+            export_to_file(&compiled, format, &out).map_err(|e| format!("export failed: {e}"))?;
             println!("exported {}", out.display());
             Ok(())
         }

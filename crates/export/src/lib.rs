@@ -727,7 +727,7 @@ mod tests {
     #[test]
     fn golden_md() {
         let md = render_md(&sample());
-        let expected = "# Il Romanzo\n\n**Elena Autrice**\n\n\n# Capitolo 1\n\nUn **inizio** e un *sospetto*.[^1]\n\n\n***\n\nSeconda parte.\n\n[^1]: La nota.\n";
+        let expected = "# Il Romanzo\n\n**Elena Autrice**\n\n\n# Chapter 1\n\nUn **inizio** e un *sospetto*.[^1]\n\n\n***\n\nSeconda parte.\n\n[^1]: La nota.\n";
         assert_eq!(md, expected);
     }
 
@@ -735,7 +735,7 @@ mod tests {
     fn golden_txt() {
         let txt = render_txt(&sample());
         assert!(txt.starts_with("IL ROMANZO\nElena Autrice\n"));
-        assert!(txt.contains("CAPITOLO 1"));
+        assert!(txt.contains("CHAPTER 1"));
         assert!(txt.contains("Un inizio e un sospetto."));
         assert!(txt.contains("[1] La nota."));
     }

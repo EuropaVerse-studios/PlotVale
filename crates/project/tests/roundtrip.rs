@@ -125,7 +125,7 @@ fn future_schema_is_rejected() {
     let path = temp_path("future");
     save_zip(&mut project, &profiles, &path, &SaveOptions::default()).unwrap();
     let err = open_zip(&path).unwrap_err().to_string();
-    assert!(err.contains("recente"), "errore inatteso: {err}");
+    assert!(err.contains("newer"), "unexpected error: {err}");
 }
 
 #[test]

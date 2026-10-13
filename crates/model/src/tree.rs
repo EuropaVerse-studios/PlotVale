@@ -308,9 +308,10 @@ impl Tree {
     /// Moves a node one slot among siblings (`up = true` = upwards).
     /// Returns `false` if already at the edge.
     pub fn reorder(&mut self, id: NodeId, up: bool) -> Result<bool, TreeError> {
-        let parent = self.get(id)?.parent.ok_or_else(|| {
-            TreeError::Forbidden("roots cannot be reordered".to_string())
-        })?;
+        let parent = self
+            .get(id)?
+            .parent
+            .ok_or_else(|| TreeError::Forbidden("roots cannot be reordered".to_string()))?;
         let siblings = &mut self.get_mut(parent)?.children;
         let Some(pos) = siblings.iter().position(|child| *child == id) else {
             return Err(TreeError::NotFound(id));
@@ -328,9 +329,10 @@ impl Tree {
 
     /// Indents the node under the previous sibling. `false` if there is none.
     pub fn indent(&mut self, id: NodeId) -> Result<bool, TreeError> {
-        let parent = self.get(id)?.parent.ok_or_else(|| {
-            TreeError::Forbidden("roots cannot be indented".to_string())
-        })?;
+        let parent = self
+            .get(id)?
+            .parent
+            .ok_or_else(|| TreeError::Forbidden("roots cannot be indented".to_string()))?;
         let pos = self
             .get(parent)?
             .children
@@ -349,9 +351,10 @@ impl Tree {
     /// Outdents the node to the parent level, right after it.
     /// `false` if already at the top level.
     pub fn outdent(&mut self, id: NodeId) -> Result<bool, TreeError> {
-        let parent = self.get(id)?.parent.ok_or_else(|| {
-            TreeError::Forbidden("roots cannot be outdented".to_string())
-        })?;
+        let parent = self
+            .get(id)?
+            .parent
+            .ok_or_else(|| TreeError::Forbidden("roots cannot be outdented".to_string()))?;
         let grandparent = match self.get(parent)?.parent {
             Some(grandparent) => grandparent,
             None => return Ok(false),
@@ -376,7 +379,7 @@ impl Tree {
         }
         if self.is_in_trash(id) {
             return Err(TreeError::Forbidden(
-                "l'elemento è già nel cestino".to_string(),
+                "the item is already in trash".to_string(),
             ));
         }
         if let Some(old_parent) = node.parent {
@@ -593,7 +596,7 @@ mod tests {
         assert_eq!(
             tree.move_node(tree.draft_root, cap, 0),
             Err(TreeError::Forbidden(
-                "le radici di sistema non si possono spostare".to_string()
+                "system roots cannot be moved".to_string()
             ))
         );
         assert_eq!(tree.move_node(cap, cap, 0), Err(TreeError::WouldCycle));

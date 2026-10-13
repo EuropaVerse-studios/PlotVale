@@ -9,9 +9,9 @@
 short stories, and long-form texts: a libre alternative to Scrivener, written in
 **pure Rust**, designed for **hobbyist writers** as well as seasoned novelists.
 
-> An independent community project, **not affiliated with the ArtCraft team**.
-> It follows the suite's conventions (pure Rust, `MIT OR Apache-2.0` license,
-> `*Craft` naming) to stay compatible with the ecosystem. See `ATTRIBUTION.md`.
+> An **independent project** inspired by the ArtCraft philosophy — free creative
+> tools, open formats, no lock-in. Not affiliated with, endorsed by, or part of
+> the ArtCraft team. See `ATTRIBUTION.md`.
 
 ## Why another writing app?
 

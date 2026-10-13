@@ -1,16 +1,20 @@
 # ATTRIBUTION.md — thanks and third-party licenses
 
-PlotVale is an independent community project, **not affiliated with or endorsed
-by the ArtCraft team** (the "ArtCraft" name and logos are trademarks of their
-respective owners). PlotVale follows the suite's conventions (pure Rust,
-dual MIT/Apache-2.0 license, `*Craft` naming) to stay compatible with the
-ecosystem, without claiming to be official.
+## PlotVale and ArtCraft
+
+PlotVale is an **independent project**: it is not affiliated with, endorsed by,
+or part of the ArtCraft team. It is inspired by the ArtCraft philosophy — free
+tools for creators, open formats, no lock-in — and adopts the same licensing
+habit (dual MIT/Apache-2.0) to stay reuse-friendly. The "ArtCraft" name and
+logos are trademarks of their respective owners; nothing in this repository
+claims otherwise.
 
 ## PlotVale code
 
 All code in this repository is the work of PlotVale contributors and is
 distributed under the dual **MIT OR Apache-2.0** license (see `LICENSE-MIT`,
-`LICENSE-APACHE`).
+`LICENSE-APACHE`). The logo and banner in `assets/` are original PlotVale
+project assets, covered by the same dual license.
 
 The `LICENSE-MIT` and `LICENSE-APACHE` texts are the official texts of the
 respective licenses.
