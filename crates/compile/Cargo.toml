@@ -1,0 +1,17 @@
+[package]
+name = "plotvale-compile"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Motore di composizione: selezione di nodi verso sezioni e blocchi"
+
+[dependencies]
+plotvale-model.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

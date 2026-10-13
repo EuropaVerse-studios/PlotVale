@@ -1,0 +1,24 @@
+[package]
+name = "plotvale-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "PlotVale a riga di comando: new, verify, stats, export"
+
+[[bin]]
+name = "plotvale-cli"
+path = "src/main.rs"
+
+[dependencies]
+plotvale-model.workspace = true
+plotvale-project.workspace = true
+plotvale-search.workspace = true
+plotvale-compile.workspace = true
+plotvale-export.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true

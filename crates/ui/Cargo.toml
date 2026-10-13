@@ -1,0 +1,28 @@
+[package]
+name = "plotvale-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Interfaccia grafica di PlotVale (eframe/egui)"
+
+[dependencies]
+plotvale-model.workspace = true
+plotvale-project.workspace = true
+plotvale-search.workspace = true
+plotvale-compile.workspace = true
+plotvale-export.workspace = true
+eframe.workspace = true
+egui.workspace = true
+egui_dock.workspace = true
+rfd.workspace = true
+ropey.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+ulid.workspace = true
+image.workspace = true
+
+[lints]
+workspace = true

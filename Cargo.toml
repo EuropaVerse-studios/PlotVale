@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+members = ["crates/*", "apps/*", "xtask"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+authors = ["PlotVale contributors"]
+repository = "https://github.com/plotvale/plotvale"
+rust-version = "1.90"
+
+[workspace.dependencies]
+# crate interne
+plotvale-model = { path = "crates/model" }
+plotvale-project = { path = "crates/project" }
+plotvale-search = { path = "crates/search" }
+plotvale-compile = { path = "crates/compile" }
+plotvale-export = { path = "crates/export" }
+plotvale-ui = { path = "crates/ui" }
+# esterne
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+ulid = { version = "1", features = ["serde"] }
+chrono = { version = "0.4", default-features = false, features = ["serde", "clock", "std"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+regex = "1"
+clap = { version = "4", features = ["derive"] }
+eframe = "0.36"
+egui = "0.36"
+image = { version = "0.25", default-features = false, features = ["png"] }
+egui_dock = "0.21"
+rfd = "0.17"
+ropey = "1"
+docx-rs = "0.4"
+epub-builder = "0.8"
+proptest = "1"
+tempfile = "3"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"

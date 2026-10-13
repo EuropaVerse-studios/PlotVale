@@ -1,0 +1,19 @@
+[package]
+name = "plotvale-export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Renderer di esportazione: TXT, Markdown, HTML, DOCX, EPUB"
+
+[dependencies]
+plotvale-model.workspace = true
+plotvale-compile.workspace = true
+thiserror.workspace = true
+docx-rs.workspace = true
+epub-builder.workspace = true
+
+[lints]
+workspace = true

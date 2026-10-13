@@ -1,0 +1,26 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+# (Cargo.lock e' voluto per i binari; qui lo ignoriamo per ora, verra' rivalutato)
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# File temporanei di PlotVale (mai committare)
+*.plotvale.tmp
+*-backups/
+
+# Build e packaging
+/dist/
+*.msi
+*.dmg
+*.AppImage
+*.deb
+*.zip
