@@ -3,6 +3,7 @@
 # PlotVale — the free anti-Scrivener, for real writers
 
 [![CI](https://github.com/plotvale/plotvale/actions/workflows/ci.yml/badge.svg)](https://github.com/plotvale/plotvale/actions/workflows/ci.yml)
+[![Documentation Status](https://readthedocs.org/projects/plotvale/badge/?version=latest)](https://plotvale.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 
 **PlotVale** is a free and open-source program for organizing and writing novels,
@@ -56,8 +57,21 @@ cargo test --workspace
 cargo run -p xtask -- check-locales
 ```
 
-New to PlotVale? Read the [user manual](docs/user-manual.md) (5-minute tour included).
-Curious about the file format? Start from the [format specification](docs/format-spec.md).
+## Documentation
+
+The full documentation is published on Read the Docs:
+**<https://plotvale.readthedocs.io/>** — a 5-minute tour, the complete user guide, the
+[format specification](docs/format-spec.md), the CLI reference, and the architecture notes.
+
+Its sources live in [`docs/`](docs) and are plain Markdown built with Sphinx. To build
+them locally:
+
+```sh
+python -m venv .venv
+.venv/Scripts/pip install -r docs/requirements.txt   # Windows
+.venv/bin/pip install -r docs/requirements.txt       # Linux / macOS
+.venv/Scripts/python -m sphinx -b html docs docs/_build/html
+```
 
 ## Repository layout
 
@@ -72,7 +86,7 @@ apps/plotvale/      desktop app (window)
 apps/plotvale-cli/  command-line app
 xtask/            automation (e.g. translation parity check)
 locales/          interface strings (en.json, it.json) — the app stays bilingual
-docs/             format spec, architecture, user manual
+docs/             documentation sources (Sphinx, published on Read the Docs)
 ```
 
 ## Contributing

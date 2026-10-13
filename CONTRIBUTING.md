@@ -9,6 +9,14 @@ even if this is your first open-source project.
 2. Open (or pick) an issue: no PR without a linked issue, except typos and docs.
 3. Unsure about direction? Discuss first, code second.
 
+## Documentation
+
+The user-facing documentation is in `docs/` and is published on Read the Docs. It is
+plain Markdown built with Sphinx; `docs/development.md` explains how to build it
+locally. Documentation contributions are welcome without an issue, like typo fixes —
+but keep the two rules above: English prose, and no claim about the app that the code
+does not actually do.
+
 ## Code rules
 
 - Rust edition 2024, `cargo fmt` mandatory, `cargo clippy -- -D warnings` clean.

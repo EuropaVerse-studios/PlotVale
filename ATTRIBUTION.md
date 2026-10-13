@@ -43,6 +43,18 @@ Note on `epub-builder` (MPL-2.0): it is used as a library dependency; PlotVale's
 own code stays MIT/Apache-2.0. The MPL crate's source is publicly available
 on crates.io as the license requires.
 
+## Documentation build (Python; not shipped with the app)
+
+These are build-time only: they render the documentation site and are never linked into
+the binaries. Versions are pinned in `docs/requirements.txt`.
+
+| Package | License | Use in PlotVale |
+|---|---|---|
+| `Sphinx` | BSD-2-Clause | documentation generator |
+| `myst-parser` | MIT | Markdown support for Sphinx |
+| `sphinx-rtd-theme` | MIT | documentation theme |
+| `sphinx-copybutton` | MIT | copy button on code blocks |
+
 ## Language resources (planned, not yet included)
 
 Future Hunspell spell-check dictionaries (e.g. Italian) carry their own licenses

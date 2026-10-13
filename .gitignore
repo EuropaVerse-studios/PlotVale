@@ -41,6 +41,11 @@ tarpaulin-report.*
 *.profraw
 *.profdata
 
+# Documentation build (Sphinx) and the local Python environment
+/docs/_build/
+.venv/
+__pycache__/
+
 # Local secrets (never commit)
 .env
 .env.*

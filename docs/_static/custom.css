@@ -1,0 +1,55 @@
+/* PlotVale brand colours on top of the Read the Docs theme.
+   Palette sampled from assets/logo.png (see crates/ui/src/brand.rs):
+   coral #F07050, warm black #171310, cream #F5EDDF, deep coral #C9502F. */
+
+.wy-nav-side {
+    background: #171310;
+}
+
+.wy-side-nav-search {
+    background: #201915;
+}
+
+.wy-menu-vertical a:hover,
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.current a:hover {
+    background: #28201a;
+}
+
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.toctree-l1.current > a {
+    color: #f07050;
+    border-top-color: #c9502f;
+    border-bottom-color: #c9502f;
+}
+
+.wy-nav-top {
+    background: #c9502f;
+}
+
+.rst-content a,
+.rst-content a:visited {
+    color: #c9502f;
+}
+
+.rst-content .admonition-title,
+.rst-content .note .admonition-title {
+    background: #c9502f;
+}
+
+.rst-content .note {
+    background: #fdf3ef;
+}
+
+.rst-content .admonition.tip {
+    background: #fdf3ef;
+}
+
+.rst-content .admonition.tip .admonition-title {
+    background: #c9502f;
+}
+
+/* Rounded, brand-tinted code blocks. */
+.rst-content div[class^="highlight"] {
+    border-radius: 6px;
+}
