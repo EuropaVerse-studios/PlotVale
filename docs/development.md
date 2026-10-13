@@ -44,7 +44,7 @@ are fixed rather than silenced.
 crates/model/     data model: tree, documents, sheets, goals, word counting
 crates/project/   .plotvale reading/writing, atomic saves, backups, migrations
 crates/search/    full-text index, regex, saved queries
-crates/compile/   composition engine: selection → sections → blocks
+crates/compile/   composition engine: selection -> sections -> blocks
 crates/export/    TXT/Markdown/HTML/DOCX/EPUB renderers
 crates/ui/        egui interface: binder, editor, corkboard, inspector
 apps/plotvale/    the desktop app
@@ -93,21 +93,42 @@ The site is built with Sphinx and MyST and published on Read the Docs from
 python -m venv .venv
 .venv/Scripts/pip install -r docs/requirements.txt   # Windows
 .venv/bin/pip install -r docs/requirements.txt       # Linux / macOS
-.venv/Scripts/python -m sphinx -b html docs docs/_build/html
+```
+
+Then build. `-W` turns warnings into errors, exactly like `-D warnings` does for Rust, and
+`-d` keeps the Sphinx cache **outside** the output directory:
+
+```sh
+# HTML
+.venv/Scripts/python -m sphinx -b html -W -d docs/_build/doctrees docs docs/_build/html
+
+# EPUB and PDF (the offline formats Read the Docs builds)
+.venv/Scripts/python -m sphinx -b epub -W -d docs/_build/doctrees docs docs/_build/epub
+.venv/Scripts/python -m sphinx -b latex -W -d docs/_build/doctrees docs docs/_build/latex
+cd docs/_build/latex && latexmk -pdf plotvale.tex
 ```
 
 On Linux and macOS use `.venv/bin/python` instead. Then open
 `docs/_build/html/index.html` in a browser.
 
 ```{note}
-Read the Docs builds with `fail_on_warning: true`, exactly like the Rust code builds with
-`-D warnings`. A broken cross-reference or a missing image **fails the docs build**, so
-the published site cannot silently rot.
+Do not leave out `-d`. Without it Sphinx puts its cache in the output directory, and the
+EPUB builder then warns about every file it finds there — 25 warnings, zero real problems.
+Read the Docs always passes `-d`, so this only bites local builds.
+```
+
+```{note}
+Read the Docs builds with `fail_on_warning: true`, so a broken internal link, a missing
+image, or an unknown `{doc}` reference **fails the docs build**. The published site cannot
+silently rot.
 ```
 
 The pages under *The project* (roadmap, changelog, attribution) are **included from the
 repository root**, so there is one copy of each. Edit `ROADMAP.md`, `CHANGELOG.md`, or
 `ATTRIBUTION.md` at the root and the documentation picks the change up on the next build.
+Remember that the root files are also typeset in the PDF: characters that `pdflatex`
+cannot handle need an entry in `latex_elements` in `docs/conf.py`, or the PDF build breaks
+while HTML and EPUB stay green.
 
 ## See also
 

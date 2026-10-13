@@ -1,6 +1,6 @@
 # Export
 
-*File → Export…* turns your manuscript into a file you can send to someone. One
+*File→ Export…* turns your manuscript into a file you can send to someone. One
 composition engine produces the content; the format only decides how it is written out.
 What you see in the preview is what every format gets.
 

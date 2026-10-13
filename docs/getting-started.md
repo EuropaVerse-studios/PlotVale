@@ -71,7 +71,7 @@ See the [command line reference](cli.md) for every flag and profile.
 ## Your first project in the app
 
 1. **Launch PlotVale** and click **Create a new project** on the welcome screen (or use
-   *File → New project*).
+   *File→ New project*).
 2. **Walk the wizard.** Five short steps: *Template* (Novel, Short story, or Blank),
    *Details* (title, author, language), *Structure* (chapters and scenes per chapter),
    *Features* (daily goal, total goal, Expert mode), *Location* (a single `.plotvale`
@@ -83,18 +83,18 @@ See the [command line reference](cli.md) for every flag and profile.
 4. **Format.** Use the toolbar above the editor for **bold**, *italic*, inline code,
    headings, quotes, and lists, or the `Ctrl+B` / `Ctrl+I` shortcuts. The toolbar works
    on the selected text and toggles off if you press it twice.
-5. **Export.** *File → Export…*, pick a preset and a format: DOCX for your editor, EPUB
+5. **Export.** *File→ Export…*, pick a preset and a format: DOCX for your editor, EPUB
    for e-readers, Markdown or HTML for anything else.
 
 ```{tip}
-Not sure where a feature lives? *Help → Quick guide* opens a short tour, and the
+Not sure where a feature lives? *Help→ Quick guide* opens a short tour, and the
 [user guide](user-manual.md) documents every panel.
 ```
 
 ## Where your text lives
 
 A project is a **single `.plotvale` file** — a zip archive that contains only plain
-text: Markdown documents and JSON metadata. With *File → Save as…* you can save it as a
+text: Markdown documents and JSON metadata. With *File→ Save as…* you can save it as a
 **folder** instead, which works better with Git and file sync. Either way there is
 nothing proprietary inside: the [format specification](format-spec.md) is public.
 

@@ -22,11 +22,11 @@ another program — see the [format specification](../format-spec.md).
 ## Saving
 
 You do not have to save. PlotVale writes your work **three seconds after you stop
-typing**, and immediately on *File → Save* or `Ctrl+S`. The status bar at the bottom
+typing**, and immediately on *File→ Save* or `Ctrl+S`. The status bar at the bottom
 tells you what is going on:
 
-- **● and the project name** — there are unsaved changes.
-- **○ and the project name** — everything is written to disk.
+- a **filled dot** and the project name — there are unsaved changes.
+- a **hollow dot** and the project name — everything is written to disk.
 - A message appears when something fails, in plain language, never as a stack trace.
 
 Saves are atomic: PlotVale writes a temporary file next to the project and only renames
@@ -55,7 +55,7 @@ word, and a lone dash counts as none.
 
 ## Expert mode
 
-*View → Expert mode* reveals the advanced options, such as custom fields in the
+*View→ Expert mode* reveals the advanced options, such as custom fields in the
 inspector. It changes nothing about your text; it just stops hiding the sharper tools.
 
 ## See also

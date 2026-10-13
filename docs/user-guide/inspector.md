@@ -21,10 +21,10 @@ chapter without opening it:
 
 | Status | Dot |
 |---|---|
-| To do | ○ grey |
-| Draft | ● coral |
-| Revised | ● light blue |
-| Final | ● green |
+| To do | hollow circle, grey |
+| Draft | filled circle, coral |
+| Revised | filled circle, light blue |
+| Final | filled circle, green |
 
 ## Snapshots
 
@@ -55,6 +55,6 @@ can prove that by exporting to any format — sheets stay out.
 
 ## Custom fields
 
-In *View → Expert mode*, additional **custom fields** appear in the inspector, along with
+In *View→ Expert mode*, additional **custom fields** appear in the inspector, along with
 the other advanced options. They are stored with the project and follow the
 [format specification](../format-spec.md).

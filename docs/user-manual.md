@@ -8,14 +8,14 @@ the concepts, then jump to what you need.
 
 ## The five-minute tour
 
-1. **Create a project**: *File → New project*. The wizard starts you with a
+1. **Create a project**: *File→ New project*. The wizard starts you with a
    "Manuscript" folder, an example scene, "Research", and "Trash".
 2. **Write**: click a scene in the left-hand binder and write in the center. You can
    use Markdown formatting: `**bold**`, `*italic*`, `# Heading` — or the toolbar above
    the editor.
 3. **Organize**: right-click an item to create scenes, folders, and notes, move them
    around, reorder them, or send them to the trash.
-4. **Save**: everything autosaves after a few seconds; *File → Save* saves immediately.
+4. **Save**: everything autosaves after a few seconds; *File→ Save* saves immediately.
 
 ## Key concepts
 
@@ -30,7 +30,7 @@ the concepts, then jump to what you need.
   restore it at any time.
 - **Annotation** — write `[[note: revise this]]` in the text. It is visible while you
   write and never exported.
-- **Export** — *File → Export…*, pick a profile and a format: DOCX, EPUB, Markdown,
+- **Export** — *File→ Export…*, pick a profile and a format: DOCX, EPUB, Markdown,
   HTML, or plain text.
 
 ## The pages

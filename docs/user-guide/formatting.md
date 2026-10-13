@@ -6,13 +6,13 @@ like a word processor's toolbar does.
 | Button | What it does | Shortcut |
 |---|---|---|
 | **B** | **Bold** | `Ctrl+B` |
-| *I* | *Italic* | `Ctrl+I` |
-| **</>** | Inline code | — |
-| **H1 H2 H3** | Heading level 1, 2, or 3 | — |
-| **❝** | Block quote | — |
-| **•** | Bulleted list | — |
-| **annotation** | An annotation note, not exported | — |
-| **A+** / **A−** | Bigger / smaller text (12–26 pt) | — |
+| **I** | *Italic* | `Ctrl+I` |
+| **code** | Inline code | — |
+| **H1**, **H2**, **H3** | Heading level 1, 2, or 3 | — |
+| **quote** | Block quote | — |
+| **list** | Bulleted list | — |
+| **note** | An annotation note, not exported | — |
+| **A+**, **A-** | Bigger / smaller text (12-26 pt) | — |
 
 ## How the toolbar behaves
 
@@ -20,7 +20,7 @@ like a word processor's toolbar does.
   around what you selected, and the cursor stays where you expect it.
 - **It toggles.** Press **B** again on text that is already bold and the formatting is
   removed. The same applies to the other markers.
-- **`A+` / `A−` change how you see the text, not what it says.** The zoom applies to the
+- **`A+` / `A-` change how you see the text, not what it says.** The zoom applies to the
   editor's rendering of Markdown (headings scale too); the stored text is untouched, so
   exports are unaffected.
 - **Every change goes through the model.** Formatting edits are normal edits: they mark

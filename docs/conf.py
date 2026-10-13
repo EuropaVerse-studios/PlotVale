@@ -55,6 +55,28 @@ html_theme_options = {
     "style_external_links": True,
 }
 
+# The "pdf" format that Read the Docs builds runs pdflatex, which cannot typeset
+# every Unicode character. The pages below use box-drawing characters (the
+# architecture diagram), an arrow, and a check mark (ROADMAP.md); map them to
+# LaTeX-safe equivalents so the PDF builds, while the HTML keeps the glyphs.
+latex_elements = {
+    "preamble": r"""
+\usepackage{newunicodechar}
+\newunicodechar{─}{-}
+\newunicodechar{│}{|}
+\newunicodechar{┌}{+}
+\newunicodechar{┐}{+}
+\newunicodechar{└}{+}
+\newunicodechar{┘}{+}
+\newunicodechar{├}{+}
+\newunicodechar{┤}{+}
+\newunicodechar{┬}{+}
+\newunicodechar{┴}{+}
+\newunicodechar{→}{->}
+\newunicodechar{✅}{\ensuremath{\checkmark}}
+""",
+}
+
 # sphinx-copybutton: do not copy the shell prompt or line numbers.
 copybutton_exclude = ".linenos, .gp, .go"
 copybutton_prompt_text = "$ "

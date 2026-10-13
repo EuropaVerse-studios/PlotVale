@@ -4,7 +4,7 @@ Writing a chapter as separate scenes is good for structure, but reading it as se
 scenes is not how a reader will experience it. **Scrivenings** mode shows a whole folder's
 text as one continuous flow you can edit in place.
 
-Turn it on from *View → Continuous editing (scrivenings)*, then **select a container** —
+Turn it on from *View→ Continuous editing (scrivenings)*, then **select a container** —
 the Manuscript root, a chapter folder, or a research folder — in the
 [binder](binder.md).
 

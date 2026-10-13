@@ -6,8 +6,8 @@ together, and they are all automatic.
 ## 1. Autosave
 
 Your text is written to disk **three seconds after you stop typing**. You can also force
-it with *File → Save* or `Ctrl+S`. The status bar shows a **●** while there are changes
-and a **○** once everything is on disk — see [the editor](editor.md).
+it with *File→ Save* or `Ctrl+S`. The status bar shows a **filled dot** while there are changes
+and a **hollow dot** once everything is on disk — see [the editor](editor.md).
 
 ## 2. Atomic writes
 
