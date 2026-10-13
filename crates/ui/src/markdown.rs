@@ -10,7 +10,8 @@ use egui::text::{Galley, LayoutJob};
 use egui::{FontId, TextFormat};
 
 /// Lays out Markdown text with inline styling, ready for `TextEdit::layouter`.
-pub fn layout_markdown(ui: &egui::Ui, text: &str, wrap_width: f32) -> Arc<Galley> {
+/// `base` is the body font size (headings scale above it).
+pub fn layout_markdown(ui: &egui::Ui, text: &str, wrap_width: f32, base: f32) -> Arc<Galley> {
     let visuals = ui.visuals();
     let ink = visuals.widgets.noninteractive.fg_stroke.color;
     let faint = if visuals.dark_mode {
@@ -18,8 +19,8 @@ pub fn layout_markdown(ui: &egui::Ui, text: &str, wrap_width: f32) -> Arc<Galley
     } else {
         egui::Color32::from_gray(120)
     };
-    let normal = TextFormat::simple(FontId::proportional(17.0), ink);
-    let weak = TextFormat::simple(FontId::proportional(17.0), faint);
+    let normal = TextFormat::simple(FontId::proportional(base), ink);
+    let weak = TextFormat::simple(FontId::proportional(base), faint);
     let _ = wrap_width;
     let mut job = LayoutJob::default();
 
@@ -27,7 +28,7 @@ pub fn layout_markdown(ui: &egui::Ui, text: &str, wrap_width: f32) -> Arc<Galley
         if n > 0 {
             job.append("\n", 0.0, normal.clone());
         }
-        push_line(ui, &mut job, line, &normal, &weak);
+        push_line(ui, &mut job, line, base, &normal, &weak);
     }
     if text.is_empty() {
         job.append("", 0.0, normal.clone());
@@ -39,16 +40,17 @@ fn push_line(
     ui: &egui::Ui,
     job: &mut LayoutJob,
     line: &str,
+    base: f32,
     normal: &TextFormat,
     weak: &TextFormat,
 ) {
     let trimmed = line.trim_start();
     if let Some(rest) = trimmed.strip_prefix("### ") {
-        push_heading(ui, job, rest, 19.0, normal, weak);
+        push_heading(ui, job, rest, base + 2.0, normal, weak);
     } else if let Some(rest) = trimmed.strip_prefix("## ") {
-        push_heading(ui, job, rest, 21.0, normal, weak);
+        push_heading(ui, job, rest, base + 4.0, normal, weak);
     } else if let Some(rest) = trimmed.strip_prefix("# ") {
-        push_heading(ui, job, rest, 24.0, normal, weak);
+        push_heading(ui, job, rest, base + 7.0, normal, weak);
     } else if trimmed == "---" || trimmed == "***" {
         job.append(trimmed, 0.0, weak.clone());
     } else if let Some(rest) = trimmed.strip_prefix("> ") {

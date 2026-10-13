@@ -24,6 +24,7 @@ respective licenses.
 | Crate | License | Use in PlotVale |
 |---|---|---|
 | `eframe`, `egui` | MIT OR Apache-2.0 | window and graphical interface |
+| `egui-phosphor` | MIT OR Apache-2.0 | Phosphor icon font (menus, binder, toolbar) |
 | `egui_dock` | MIT | dockable panels |
 | `rfd` | MIT | native open/save dialogs |
 | `ropey` | MIT | editor text buffer |

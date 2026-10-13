@@ -30,6 +30,7 @@ clap = { version = "4", features = ["derive"] }
 eframe = "0.36"
 egui = "0.36"
 image = { version = "0.25", default-features = false, features = ["png"] }
+egui-phosphor = { version = "0.14", default-features = false, features = ["regular"] }
 egui_dock = "0.21"
 rfd = "0.17"
 ropey = "1"

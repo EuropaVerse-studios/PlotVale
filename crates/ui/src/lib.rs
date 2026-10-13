@@ -6,9 +6,12 @@
 
 pub mod brand;
 mod diff;
+mod format;
 mod i18n;
+mod icons;
 mod markdown;
 mod theme;
+mod wizard;
 
 pub use i18n::Locale;
 
@@ -115,6 +118,8 @@ struct UiState {
     last_total_words: usize,
     want_quit: bool,
     confirm_empty_trash: bool,
+    wizard: Option<wizard::WizardState>,
+    editor_font_size: f32,
 }
 
 impl Default for UiState {
@@ -155,6 +160,8 @@ impl Default for UiState {
             last_total_words: 0,
             want_quit: false,
             confirm_empty_trash: false,
+            wizard: None,
+            editor_font_size: 17.0,
         }
     }
 }
@@ -171,6 +178,7 @@ pub struct PlotValeApp {
 impl PlotValeApp {
     /// Creates the app (called by `eframe::run_native`).
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        icons::register(&cc.egui_ctx);
         theme::apply_theme(&cc.egui_ctx);
         let logo_img = brand::decode_logo(192);
         let mut logo = None;
@@ -272,7 +280,7 @@ fn do_open(path: PathBuf, doc_slot: &mut Option<DocState>, ui: &mut UiState, loc
                     .map(|d| d.profiles.active.clone())
                     .unwrap_or_default(),
                 status: if recovered {
-                    "Recuperato dopo la chiusura inattesa — salva per consolidare".to_string()
+                    loc.get("status_recovered").to_string()
                 } else {
                     String::new()
                 },
@@ -289,28 +297,6 @@ fn do_open(path: PathBuf, doc_slot: &mut Option<DocState>, ui: &mut UiState, loc
             ui.status = format!("{}: {e}", loc.get("err_open"));
         }
     }
-}
-
-/// New empty in-memory project.
-fn fresh_doc(doc_slot: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
-    let project = Project::new(loc.get("untitled"), "", APP_VERSION);
-    let total = project.total_words();
-    let draft = project.tree.draft_root;
-    *doc_slot = Some(DocState {
-        project,
-        profiles: plotvale_compile::ProfilesFile::default(),
-        path: None,
-        folder_mode: false,
-    });
-    let expert = ui.expert;
-    *ui = UiState {
-        last_total_words: total,
-        selection: Some(draft),
-        expert,
-        ..UiState::default()
-    };
-    ui.dirty = true;
-    ui.status = loc.get("status_unsaved").to_string();
 }
 
 /// Ensures the document has an open editor view.
@@ -590,7 +576,9 @@ fn request_action(
 
 fn run_pending(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, action: PendingAction) {
     match action {
-        PendingAction::New => fresh_doc(doc, ui, loc),
+        PendingAction::New => {
+            ui.wizard = Some(wizard::WizardState::new());
+        }
         PendingAction::OpenZip => {
             if let Some(path) = rfd::FileDialog::new()
                 .set_title(loc.get("open_title_file"))
@@ -612,26 +600,402 @@ fn run_pending(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, actio
     }
 }
 
+/// Outcome of one wizard frame: stay open, close, or build the project.
+enum WizardOut {
+    Stay,
+    Close,
+    Finish,
+}
+
+/// Step icons + labels for the wizard header.
+fn wizard_steps(loc: &Locale) -> [(&'static str, String); 5] {
+    [
+        (icons::ic::SPARKLE, loc.get("wiz_step_template").to_string()),
+        (
+            icons::ic::PENCIL_SIMPLE,
+            loc.get("wiz_step_details").to_string(),
+        ),
+        (
+            icons::ic::FOLDER_SIMPLE,
+            loc.get("wiz_step_structure").to_string(),
+        ),
+        (
+            icons::ic::SLIDERS_HORIZONTAL,
+            loc.get("wiz_step_features").to_string(),
+        ),
+        (
+            icons::ic::FOLDER_NOTCH_OPEN,
+            loc.get("wiz_step_location").to_string(),
+        ),
+    ]
+}
+
+/// Builds the wizard project and installs it as the open document.
+/// On save failure the wizard stays open with the error in the status line.
+fn finish_wizard(doc_slot: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
+    let Some(wiz) = ui.wizard.take() else { return };
+    let chapter = loc.get("chapter_label").to_string();
+    let scene = loc.get("scene_label").to_string();
+    let mut project = wizard::build_project(&wiz, loc, APP_VERSION, &chapter, &scene);
+    let profiles = plotvale_compile::ProfilesFile::default();
+    let mut path = None;
+    let mut folder_mode = false;
+    let mut status = loc.get("status_unsaved").to_string();
+    let mut dirty = true;
+    if let Some(loc_path) = wiz.location.clone() {
+        match save_any(&mut project, &profiles, &loc_path, &SaveOptions::default()) {
+            Ok(()) => {
+                path = Some(loc_path);
+                folder_mode = wiz.folder_mode;
+                status = loc.get("status_saved").to_string();
+                dirty = false;
+            }
+            Err(e) => {
+                ui.status = format!("{}: {e}", loc.get("err_save"));
+                ui.wizard = Some(wiz);
+                return;
+            }
+        }
+    }
+    let total = project.total_words();
+    let draft = project.tree.draft_root;
+    *doc_slot = Some(DocState {
+        project,
+        profiles,
+        path,
+        folder_mode,
+    });
+    let expert = wiz.expert;
+    let font_size = ui.editor_font_size;
+    *ui = UiState {
+        last_total_words: total,
+        selection: Some(draft),
+        expert,
+        editor_font_size: font_size,
+        ..UiState::default()
+    };
+    ui.dirty = dirty;
+    ui.status = status;
+}
+
+/// Modal wizard window; call every frame from the dialog pass.
+fn wizard_window(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
+    if ui.wizard.is_none() {
+        return;
+    }
+    let mut out = WizardOut::Stay;
+    egui::Window::new(format!("{} {}", icons::ic::SPARKLE, loc.get("wiz_title")))
+        .collapsible(false)
+        .resizable(false)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .min_size([520.0, 0.0])
+        .show(ctx, |w| {
+            let step = ui.wizard.as_ref().map(|z| z.step).unwrap_or(0);
+            // Step header.
+            w.horizontal_wrapped(|row| {
+                for (i, (icon, label)) in wizard_steps(loc).into_iter().enumerate() {
+                    let text = format!("{icon} {label}");
+                    if i == step {
+                        row.colored_label(theme::accent(), egui::RichText::new(text).strong());
+                    } else if i < step {
+                        row.label(
+                            egui::RichText::new(format!("{} {text}", icons::ic::CHECK)).weak(),
+                        );
+                    } else {
+                        row.label(egui::RichText::new(text).weak());
+                    }
+                    if i + 1 < 5 {
+                        row.label(egui::RichText::new("›").weak());
+                    }
+                }
+            });
+            w.separator();
+            if let Some(wiz) = ui.wizard.as_mut() {
+                match wiz.step {
+                    0 => wizard_page_template(w, wiz, loc),
+                    1 => wizard_page_details(w, wiz, loc),
+                    2 => wizard_page_structure(w, wiz, loc),
+                    3 => wizard_page_features(w, wiz, loc),
+                    _ => wizard_page_location(w, wiz, loc),
+                }
+            }
+            w.separator();
+            w.horizontal(|row| {
+                if row
+                    .button(format!("{} {}", icons::ic::ARROW_LEFT, loc.get("wiz_back")))
+                    .clicked()
+                    && let Some(wiz) = ui.wizard.as_mut()
+                {
+                    wiz.step = wiz.step.saturating_sub(1);
+                }
+                if row
+                    .button(format!("{} {}", icons::ic::X, loc.get("wiz_cancel")))
+                    .clicked()
+                {
+                    out = WizardOut::Close;
+                }
+                row.with_layout(egui::Layout::right_to_left(egui::Align::Center), |row| {
+                    if step >= 4 {
+                        if row
+                            .button(format!("{} {}", icons::ic::ROCKET, loc.get("wiz_create")))
+                            .clicked()
+                        {
+                            out = WizardOut::Finish;
+                        }
+                    } else if row
+                        .button(format!(
+                            "{} {}",
+                            icons::ic::ARROW_RIGHT,
+                            loc.get("wiz_next")
+                        ))
+                        .clicked()
+                        && let Some(wiz) = ui.wizard.as_mut()
+                    {
+                        wiz.step = (wiz.step + 1).min(4);
+                    }
+                });
+            });
+        });
+    match out {
+        WizardOut::Stay => {}
+        WizardOut::Close => {
+            ui.wizard = None;
+        }
+        WizardOut::Finish => finish_wizard(doc, ui, loc),
+    }
+}
+
+fn wizard_template_card(
+    w: &mut egui::Ui,
+    wiz: &mut wizard::WizardState,
+    loc: &Locale,
+    tpl: wizard::Template,
+    icon: &str,
+    name_key: &'static str,
+    desc_key: &'static str,
+) {
+    let selected = wiz.template == tpl;
+    let card = egui::Frame::group(w.style())
+        .fill(if selected {
+            theme::accent().linear_multiply(0.25)
+        } else {
+            w.style().visuals.faint_bg_color
+        })
+        .show(w, |c| {
+            c.horizontal(|row| {
+                row.label(egui::RichText::new(icon).size(28.0));
+                row.vertical(|col| {
+                    col.label(egui::RichText::new(loc.get(name_key)).strong().size(15.0));
+                    col.small(loc.get(desc_key));
+                });
+            });
+        });
+    if card.response.interact(egui::Sense::click()).clicked() {
+        wiz.template = tpl;
+        wiz.apply_template();
+    }
+}
+
+fn wizard_page_template(w: &mut egui::Ui, wiz: &mut wizard::WizardState, loc: &Locale) {
+    w.label(loc.get("wiz_template_hint"));
+    w.add_space(6.0);
+    wizard_template_card(
+        w,
+        wiz,
+        loc,
+        wizard::Template::Novel,
+        icons::ic::BOOK_OPEN_TEXT,
+        "wiz_tpl_novel",
+        "wiz_tpl_novel_d",
+    );
+    wizard_template_card(
+        w,
+        wiz,
+        loc,
+        wizard::Template::Story,
+        icons::ic::FILE_TEXT,
+        "wiz_tpl_story",
+        "wiz_tpl_story_d",
+    );
+    wizard_template_card(
+        w,
+        wiz,
+        loc,
+        wizard::Template::Blank,
+        icons::ic::NOTE_PENCIL,
+        "wiz_tpl_blank",
+        "wiz_tpl_blank_d",
+    );
+}
+
+fn wizard_page_details(w: &mut egui::Ui, wiz: &mut wizard::WizardState, loc: &Locale) {
+    w.label(loc.get("wiz_details_hint"));
+    w.add_space(6.0);
+    egui::Grid::new("wiz-details")
+        .num_columns(2)
+        .spacing([12.0, 8.0])
+        .show(w, |g| {
+            g.label(loc.get("wiz_title_label"));
+            g.text_edit_singleline(&mut wiz.title);
+            g.end_row();
+            g.label(loc.get("wiz_author_label"));
+            g.text_edit_singleline(&mut wiz.author);
+            g.end_row();
+            g.label(loc.get("wiz_lang_label"));
+            g.horizontal(|row| {
+                row.radio_value(&mut wiz.language, "en".to_string(), loc.get("lang_en"));
+                row.radio_value(&mut wiz.language, "it".to_string(), loc.get("lang_it"));
+            });
+            g.end_row();
+        });
+}
+
+fn wizard_page_structure(w: &mut egui::Ui, wiz: &mut wizard::WizardState, loc: &Locale) {
+    w.label(loc.get("wiz_structure_hint"));
+    w.add_space(6.0);
+    w.horizontal(|row| {
+        row.label(loc.get("wiz_chapters"));
+        row.add(egui::DragValue::new(&mut wiz.chapters).range(1..=30));
+    });
+    w.horizontal(|row| {
+        row.label(loc.get("wiz_scenes"));
+        row.add(egui::DragValue::new(&mut wiz.scenes_per_chapter).range(1..=20));
+    });
+    w.checkbox(&mut wiz.with_example, loc.get("wiz_example"));
+    w.small(loc.get("wiz_example_d"));
+}
+
+fn wizard_page_features(w: &mut egui::Ui, wiz: &mut wizard::WizardState, loc: &Locale) {
+    w.label(loc.get("wiz_features_hint"));
+    w.add_space(6.0);
+    w.label(egui::RichText::new(loc.get("wiz_daily")).strong());
+    w.horizontal_wrapped(|row| {
+        row.radio_value(&mut wiz.daily_goal, None, loc.get("wiz_goal_none"));
+        for preset in [500u64, 1000, 1667, 2000] {
+            let label = if preset == 1667 {
+                format!("1667 ({})", loc.get("wiz_goal_nano"))
+            } else {
+                preset.to_string()
+            };
+            row.radio_value(&mut wiz.daily_goal, Some(preset), label);
+        }
+    });
+    w.add_space(4.0);
+    let mut pg_on = wiz.project_goal.is_some();
+    if w.checkbox(&mut pg_on, loc.get("wiz_goal_project"))
+        .changed()
+    {
+        wiz.project_goal = pg_on.then_some(50_000);
+    }
+    if let Some(goal) = wiz.project_goal {
+        let mut value = goal;
+        w.horizontal(|row| {
+            row.label(loc.get("goals_project_words"));
+            if row
+                .add(
+                    egui::DragValue::new(&mut value)
+                        .range(100..=10_000_000)
+                        .speed(100),
+                )
+                .changed()
+            {
+                wiz.project_goal = Some(value);
+            }
+        });
+    }
+    w.add_space(4.0);
+    w.checkbox(&mut wiz.expert, loc.get("wiz_expert"));
+    w.small(loc.get("wiz_expert_d"));
+}
+
+fn wizard_page_location(w: &mut egui::Ui, wiz: &mut wizard::WizardState, loc: &Locale) {
+    w.label(loc.get("wiz_location_hint"));
+    w.add_space(6.0);
+    w.horizontal(|row| {
+        row.radio_value(&mut wiz.folder_mode, false, loc.get("wiz_bundle"));
+        row.radio_value(&mut wiz.folder_mode, true, loc.get("wiz_folder"));
+    });
+    w.small(loc.get("wiz_location_d"));
+    w.add_space(4.0);
+    w.horizontal(|row| {
+        let shown = wiz
+            .location
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| format!("{}.plotvale", wiz.suggested_name(loc)));
+        row.label(egui::RichText::new(shown).monospace());
+        if row
+            .button(format!(
+                "{} {}",
+                icons::ic::FOLDER_OPEN,
+                loc.get("wiz_browse")
+            ))
+            .clicked()
+        {
+            if wiz.folder_mode {
+                if let Some(dir) = rfd::FileDialog::new()
+                    .set_title(loc.get("wiz_browse"))
+                    .pick_folder()
+                {
+                    wiz.location = Some(dir.join(format!("{}.plotvale", wiz.suggested_name(loc))));
+                }
+            } else if let Some(file) = rfd::FileDialog::new()
+                .set_title(loc.get("wiz_browse"))
+                .set_file_name(format!("{}.plotvale", wiz.suggested_name(loc)))
+                .add_filter(loc.get("filter_project"), &["plotvale"])
+                .save_file()
+            {
+                wiz.location = Some(file);
+            }
+        }
+    });
+    w.small(loc.get("wiz_location_optional"));
+}
+
 fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
     egui::Panel::top("menu").show(root, |bar| {
         bar.horizontal(|bar| {
             bar.menu_button(loc.get("menu_file"), |menu| {
-                if menu.button(loc.get("menu_new")).clicked() {
+                if menu
+                    .button(format!("{} {}", icons::ic::FILE_PLUS, loc.get("menu_new")))
+                    .clicked()
+                {
                     request_action(doc, ui, loc, PendingAction::New);
                     menu.close();
                 }
-                if menu.button(loc.get("menu_open_file")).clicked() {
+                if menu
+                    .button(format!(
+                        "{} {}",
+                        icons::ic::FOLDER_OPEN,
+                        loc.get("menu_open_file")
+                    ))
+                    .clicked()
+                {
                     request_action(doc, ui, loc, PendingAction::OpenZip);
                     menu.close();
                 }
-                if menu.button(loc.get("menu_open_folder")).clicked() {
+                if menu
+                    .button(format!(
+                        "{} {}",
+                        icons::ic::FOLDER_NOTCH_OPEN,
+                        loc.get("menu_open_folder")
+                    ))
+                    .clicked()
+                {
                     request_action(doc, ui, loc, PendingAction::OpenFolder);
                     menu.close();
                 }
                 menu.separator();
                 let has_doc = doc.is_some();
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_save")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::FLOPPY_DISK,
+                            loc.get("menu_save")
+                        )),
+                    )
                     .clicked()
                 {
                     if doc.as_ref().is_some_and(|d| d.path.is_none()) {
@@ -644,7 +1008,14 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
                     menu.close();
                 }
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_save_as")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::FLOPPY_DISK_BACK,
+                            loc.get("menu_save_as")
+                        )),
+                    )
                     .clicked()
                 {
                     if let Some(d) = doc.as_mut() {
@@ -653,14 +1024,24 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
                     menu.close();
                 }
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_export")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::FILE_ARROW_DOWN,
+                            loc.get("menu_export")
+                        )),
+                    )
                     .clicked()
                 {
                     ui.show_export = true;
                     menu.close();
                 }
                 menu.separator();
-                if menu.button(loc.get("menu_quit")).clicked() {
+                if menu
+                    .button(format!("{} {}", icons::ic::X, loc.get("menu_quit")))
+                    .clicked()
+                {
                     request_action(doc, ui, loc, PendingAction::Quit);
                     menu.close();
                 }
@@ -668,7 +1049,14 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
             bar.menu_button(loc.get("menu_project"), |menu| {
                 let has_doc = doc.is_some();
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_new_scene")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::FILE_TEXT,
+                            loc.get("menu_new_scene")
+                        )),
+                    )
                     .clicked()
                 {
                     if let Some(d) = doc.as_mut() {
@@ -677,7 +1065,14 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
                     menu.close();
                 }
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_new_folder")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::FOLDER_SIMPLE,
+                            loc.get("menu_new_folder")
+                        )),
+                    )
                     .clicked()
                 {
                     if let Some(d) = doc.as_mut() {
@@ -686,7 +1081,14 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
                     menu.close();
                 }
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_new_note")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::NOTE_PENCIL,
+                            loc.get("menu_new_note")
+                        )),
+                    )
                     .clicked()
                 {
                     if let Some(d) = doc.as_mut() {
@@ -696,14 +1098,28 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
                 }
                 menu.separator();
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_goals")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::TARGET,
+                            loc.get("menu_goals")
+                        )),
+                    )
                     .clicked()
                 {
                     ui.show_goals = true;
                     menu.close();
                 }
                 if menu
-                    .add_enabled(has_doc, egui::Button::new(loc.get("menu_stats")))
+                    .add_enabled(
+                        has_doc,
+                        egui::Button::new(format!(
+                            "{} {}",
+                            icons::ic::CHART_BAR,
+                            loc.get("menu_stats")
+                        )),
+                    )
                     .clicked()
                 {
                     ui.show_stats = true;
@@ -726,11 +1142,21 @@ fn menu_bar(root: &mut egui::Ui, doc: &mut Option<DocState>, ui: &mut UiState, l
                 });
             });
             bar.menu_button(loc.get("menu_help"), |menu| {
-                if menu.button(loc.get("menu_manual")).clicked() {
+                if menu
+                    .button(format!(
+                        "{} {}",
+                        icons::ic::BOOK_OPEN,
+                        loc.get("menu_manual")
+                    ))
+                    .clicked()
+                {
                     ui.show_manual = true;
                     menu.close();
                 }
-                if menu.button(loc.get("menu_about")).clicked() {
+                if menu
+                    .button(format!("{} {}", icons::ic::INFO, loc.get("menu_about")))
+                    .clicked()
+                {
                     ui.show_about = true;
                     menu.close();
                 }
@@ -790,15 +1216,15 @@ fn ui_lang_name(loc: &Locale) -> &str {
 
 fn kind_icon(kind: NodeKind) -> &'static str {
     match kind {
-        NodeKind::DraftRoot => "\u{1f4d6}",
-        NodeKind::Folder => "\u{1f4c1}",
-        NodeKind::Scene => "\u{1f4c4}",
-        NodeKind::Note => "\u{1f4dd}",
-        NodeKind::ResearchFolder => "\u{1f52c}",
-        NodeKind::ResearchItem => "\u{1f4ce}",
-        NodeKind::CharacterSheet => "\u{1f464}",
-        NodeKind::LocationSheet => "\u{1f4cd}",
-        NodeKind::Trash => "\u{1f5d1}",
+        NodeKind::DraftRoot => icons::ic::BOOK_OPEN_TEXT,
+        NodeKind::Folder => icons::ic::FOLDER_SIMPLE,
+        NodeKind::Scene => icons::ic::FILE_TEXT,
+        NodeKind::Note => icons::ic::NOTE_PENCIL,
+        NodeKind::ResearchFolder => icons::ic::COMPASS,
+        NodeKind::ResearchItem => icons::ic::BOOKMARK_SIMPLE,
+        NodeKind::CharacterSheet => icons::ic::USER,
+        NodeKind::LocationSheet => icons::ic::MAP_PIN,
+        NodeKind::Trash => icons::ic::TRASH,
     }
 }
 
@@ -1559,7 +1985,7 @@ fn view_editor(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, conte
                         ui.selection = Some(id);
                         ui.open_doc = Some(id);
                     }
-                    doc_editor(d, ui, scroll, id);
+                    doc_editor(d, ui, loc, scroll, id);
                     scroll.separator();
                 }
             });
@@ -1585,30 +2011,100 @@ fn view_editor(doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale, conte
         row.small(format!("{} {}", words, loc.get("status_words")));
     });
     content.separator();
+    format_bar(d, ui, loc, content, open);
+    content.separator();
     egui::ScrollArea::vertical()
         .auto_shrink([false; 2])
         .show(content, |scroll| {
-            doc_editor(d, ui, scroll, open);
+            doc_editor(d, ui, loc, scroll, open);
         });
 }
 
-/// A text editor bound to a document.
-fn doc_editor(d: &mut DocState, ui: &mut UiState, egui_ui: &mut egui::Ui, id: NodeId) {
+/// Applies a toolbar action to the open view and syncs it to the model.
+fn apply_format_action(
+    d: &mut DocState,
+    ui: &mut UiState,
+    ctx: &egui::Context,
+    id: NodeId,
+    action: format::FormatAction,
+) {
     ensure_view(d, ui, id);
+    let eid = format::editor_id(id);
+    if let Some(view) = ui.views.get_mut(&id) {
+        match action {
+            format::FormatAction::Wrap { before, after } => {
+                format::wrap(ctx, eid, &mut view.text, before, after);
+            }
+            format::FormatAction::LinePrefix { prefix } => {
+                format::line_prefix(ctx, eid, &mut view.text, prefix);
+            }
+        }
+        let text = view.text.clone();
+        d.project.set_doc_text(id, &text);
+        ui.dirty = true;
+        ui.last_edit = Some(Instant::now());
+    }
+}
+
+/// Word-style formatting toolbar above the editor.
+fn format_bar(d: &mut DocState, ui: &mut UiState, loc: &Locale, bar: &mut egui::Ui, id: NodeId) {
+    ensure_view(d, ui, id);
+    let ctx = bar.ctx().clone();
+    let mut size = ui.editor_font_size;
+    let action = format::toolbar(bar, loc, &mut size, true);
+    ui.editor_font_size = size;
+    if let Some(action) = action {
+        apply_format_action(d, ui, &ctx, id, action);
+    }
+}
+
+/// A text editor bound to a document.
+fn doc_editor(
+    d: &mut DocState,
+    ui: &mut UiState,
+    loc: &Locale,
+    egui_ui: &mut egui::Ui,
+    id: NodeId,
+) {
+    ensure_view(d, ui, id);
+    let eid = format::editor_id(id);
+    let font_size = ui.editor_font_size;
+    let ctx = egui_ui.ctx().clone();
+    let mut shortcut: Option<format::FormatAction> = None;
     let changed = {
         let view = ui.views.get_mut(&id).expect("freshly created view");
-        egui_ui
-            .add(
-                egui::TextEdit::multiline(&mut view.text)
-                    .id(egui::Id::new(format!("sc-editor-{id}")))
-                    .font(egui::FontId::proportional(17.0))
-                    .desired_width(f32::INFINITY)
-                    .layouter(&mut |ui, buf, wrap| {
-                        markdown::layout_markdown(ui, buf.as_str(), wrap)
-                    }),
-            )
-            .changed()
+        let resp = egui_ui.add(
+            egui::TextEdit::multiline(&mut view.text)
+                .id(eid)
+                .font(egui::FontId::proportional(font_size))
+                .desired_width(f32::INFINITY)
+                .layouter(&mut |ui, buf, wrap| {
+                    markdown::layout_markdown(ui, buf.as_str(), wrap, font_size)
+                }),
+        );
+        if resp.has_focus() {
+            let _ = loc;
+            ctx.input(|input| {
+                if input.modifiers.command && !input.modifiers.shift {
+                    if input.key_pressed(egui::Key::B) {
+                        shortcut = Some(format::FormatAction::Wrap {
+                            before: "**",
+                            after: "**",
+                        });
+                    } else if input.key_pressed(egui::Key::I) {
+                        shortcut = Some(format::FormatAction::Wrap {
+                            before: "*",
+                            after: "*",
+                        });
+                    }
+                }
+            });
+        }
+        resp.changed()
     };
+    if let Some(action) = shortcut {
+        apply_format_action(d, ui, &ctx, id, action);
+    }
     if changed {
         let text = ui
             .views
@@ -1886,8 +2382,15 @@ fn view_welcome(
             ));
             center.add_space(12.0);
         }
-        if center.button(loc.get("welcome_new")).clicked() {
-            fresh_doc(doc, ui, loc);
+        if center
+            .button(format!(
+                "{} {}",
+                icons::ic::FILE_PLUS,
+                loc.get("welcome_new")
+            ))
+            .clicked()
+        {
+            ui.wizard = Some(wizard::WizardState::new());
         }
         if center.button(loc.get("welcome_open_file")).clicked()
             && let Some(path) = rfd::FileDialog::new()
@@ -1912,6 +2415,7 @@ fn view_welcome(
 // ---------------------------------------------------------------------------
 
 fn dialogs(ctx: &egui::Context, doc: &mut Option<DocState>, ui: &mut UiState, loc: &Locale) {
+    wizard_window(ctx, doc, ui, loc);
     if ui.want_quit {
         ui.want_quit = false;
         ctx.send_viewport_cmd(egui::ViewportCommand::Close);

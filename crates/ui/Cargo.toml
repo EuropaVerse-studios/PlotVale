@@ -23,6 +23,7 @@ serde_json.workspace = true
 chrono.workspace = true
 ulid.workspace = true
 image.workspace = true
+egui-phosphor.workspace = true
 
 [lints]
 workspace = true
