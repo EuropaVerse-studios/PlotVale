@@ -2,12 +2,12 @@
 
 PlotVale is **dual-licensed, at your choice, under MIT or Apache-2.0**:
 
-- [LICENSE-MIT](https://github.com/plotvale/plotvale/blob/master/LICENSE-MIT)
-- [LICENSE-APACHE](https://github.com/plotvale/plotvale/blob/master/LICENSE-APACHE)
+- [LICENSE-MIT](https://github.com/EuropaVerse-studios/PlotVale/blob/master/LICENSE-MIT)
+- [LICENSE-APACHE](https://github.com/EuropaVerse-studios/PlotVale/blob/master/LICENSE-APACHE)
 
 The same dual license covers the code, the documentation, and the logo and banner in
 `assets/`. The copyright notice and the list of third-party components are in
-[`NOTICE`](https://github.com/plotvale/plotvale/blob/master/NOTICE).
+[`NOTICE`](https://github.com/EuropaVerse-studios/PlotVale/blob/master/NOTICE).
 
 ```{note}
 PlotVale is an **independent project**, inspired by the ArtCraft philosophy but not

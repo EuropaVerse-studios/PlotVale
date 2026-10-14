@@ -10,7 +10,7 @@ Install stable Rust with [rustup](https://rustup.rs/). The repository pins the c
 nothing else to install: no Node, no Python, and no system packages for the app itself.
 
 ```sh
-git clone https://github.com/plotvale/plotvale
+git clone https://github.com/EuropaVerse-studios/PlotVale
 cd plotvale
 cargo run -p plotvale
 ```

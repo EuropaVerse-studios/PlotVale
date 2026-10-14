@@ -2,7 +2,7 @@
 
 # PlotVale — the free anti-Scrivener, for real writers
 
-[![CI](https://github.com/plotvale/plotvale/actions/workflows/ci.yml/badge.svg)](https://github.com/plotvale/plotvale/actions/workflows/ci.yml)
+[![CI](https://github.com/EuropaVerse-studios/PlotVale/actions/workflows/ci.yml/badge.svg)](https://github.com/EuropaVerse-studios/PlotVale/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/plotvale/badge/?version=latest)](https://plotvale.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 

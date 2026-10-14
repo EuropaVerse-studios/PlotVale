@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["PlotVale contributors"]
-repository = "https://github.com/plotvale/plotvale"
+repository = "https://github.com/EuropaVerse-studios/PlotVale"
 rust-version = "1.90"
 
 [workspace.dependencies]

@@ -1,7 +1,7 @@
 # Contributing
 
 Thanks for wanting to contribute! This page is generated from
-[`CONTRIBUTING.md`](https://github.com/plotvale/plotvale/blob/master/CONTRIBUTING.md) at
+[`CONTRIBUTING.md`](https://github.com/EuropaVerse-studios/PlotVale/blob/master/CONTRIBUTING.md) at
 the repository root, so there is only one copy to keep up to date.
 
 Before you start, two companion documents are worth five minutes:
