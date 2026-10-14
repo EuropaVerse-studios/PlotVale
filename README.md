@@ -1,4 +1,4 @@
-![PlotVale](assets/banner.png)
+![PlotVale](assets/banner.jpg)
 
 # PlotVale — the free anti-Scrivener, for real writers
 
@@ -23,8 +23,8 @@ short stories, and long-form texts: a libre alternative to Scrivener, written in
 - **Snapshots you can actually restore**, automatic backups, crash recovery.
 - **Scrivenings-style continuous editing** across scenes, a live corkboard,
   writing goals, export to TXT / Markdown / HTML / DOCX / EPUB.
-- **Bilingual interface (English + Italian)**, Italian typography («», —),
-  language-aware word counting.
+- **Bilingual interface (English + Italian)**, with the same Markdown-aware word
+  counting rule in the editor, in the goals, and in the statistics.
 
 ## Project status
 

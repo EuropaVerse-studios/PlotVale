@@ -17,6 +17,9 @@
 
 - **model** knows nothing about files, GUI, or network: data + invariants + tests only.
 - **project** is the only place that touches the filesystem (one day: IndexedDB on WASM).
+  It also reads and writes the export profiles (`plotvale_compile::ProfilesFile`), so the
+  profile settings travel inside the `.plotvale` file: that is the one edge that runs
+  against the order drawn in the diagram above.
 - **compile** turns an ordered node selection into `Compiled`
   (title, author, typed sections, layout hints).
 - **export** renders `Compiled` into every format: same content everywhere.

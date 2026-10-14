@@ -2,6 +2,18 @@
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+- Removed three dependencies that no code used (`ropey`, `serde_json` in the model,
+  `tempfile`), and aligned the workspace version with the released 0.2.0.
+- Every repository link now points to the real repository; the architecture notes
+  describe the one dependency edge (`project` → `compile`) that the diagram does not
+  draw, and the roadmap records the user manual and the format specification as done.
+- The README no longer promises Italian typography or language-aware word counting:
+  neither exists in the code.
+- The README banner is a JPEG now: 339 KB instead of 2.6 MB, the same picture.
+
 ## [0.2.0] — 2026-10-13
 
 ### Changed

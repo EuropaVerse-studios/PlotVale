@@ -10,7 +10,6 @@ description = "PlotVale data model: tree, documents, sheets, goals"
 
 [dependencies]
 serde.workspace = true
-serde_json.workspace = true
 thiserror.workspace = true
 ulid.workspace = true
 chrono.workspace = true

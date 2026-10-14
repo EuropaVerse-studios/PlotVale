@@ -2762,7 +2762,7 @@ checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
 
 [[package]]
 name = "plotvale"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "plotvale-ui",
@@ -2770,7 +2770,7 @@ dependencies = [
 
 [[package]]
 name = "plotvale-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "plotvale-compile",
@@ -2782,7 +2782,7 @@ dependencies = [
 
 [[package]]
 name = "plotvale-compile"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "plotvale-model",
  "serde",
@@ -2791,7 +2791,7 @@ dependencies = [
 
 [[package]]
 name = "plotvale-export"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "docx-rs",
  "epub-builder",
@@ -2802,33 +2802,31 @@ dependencies = [
 
 [[package]]
 name = "plotvale-model"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "proptest",
  "serde",
- "serde_json",
  "thiserror 2.0.21",
  "ulid",
 ]
 
 [[package]]
 name = "plotvale-project"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "plotvale-compile",
  "plotvale-model",
  "serde",
  "serde_json",
- "tempfile",
  "thiserror 2.0.21",
  "zip 2.4.2",
 ]
 
 [[package]]
 name = "plotvale-search"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "plotvale-model",
  "regex",
@@ -2838,7 +2836,7 @@ dependencies = [
 
 [[package]]
 name = "plotvale-ui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "eframe",
@@ -2852,7 +2850,6 @@ dependencies = [
  "plotvale-project",
  "plotvale-search",
  "rfd",
- "ropey",
  "serde_json",
  "ulid",
 ]
@@ -3234,16 +3231,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ropey"
-version = "1.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93411e420bcd1a75ddd1dc3caf18c23155eda2c090631a85af21ba19e97093b5"
-dependencies = [
- "smallvec",
- "str_indices",
-]
-
-[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3575,12 +3562,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "str_indices"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d08889ec5408683408db66ad89e0e1f93dff55c73a4ccc71c427d5b277ee47e6"
 
 [[package]]
 name = "strict-num"
@@ -4847,7 +4828,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde_json",
 ]

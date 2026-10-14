@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*", "apps/*", "xtask"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["PlotVale contributors"]
@@ -33,11 +33,9 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 egui-phosphor = { version = "0.14", default-features = false, features = ["regular"] }
 egui_dock = "0.21"
 rfd = "0.17"
-ropey = "1"
 docx-rs = "0.4"
 epub-builder = "0.8"
 proptest = "1"
-tempfile = "3"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

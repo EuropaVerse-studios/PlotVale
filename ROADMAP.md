@@ -44,4 +44,5 @@ TXT/Markdown/HTML, DOCX (docx-rs), EPUB (epub-builder).
 - [ ] Custom Level-B editor (hidden markers, per-paragraph virtualization)
 - [ ] Optional WASM build, Windows/macOS/Linux installers, release CI
 - [ ] Criterion benchmarks (open/save of a 500k-word project < 400 ms)
-- [ ] Full user manual, public v1 spec, project page
+- [x] Full user manual and public v1 format specification (Sphinx site, sources in `docs/`)
+- [ ] Project page
