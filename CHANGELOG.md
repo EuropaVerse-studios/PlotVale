@@ -5,6 +5,19 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
+- **The whole interface is now React 19 + TypeScript inside a Tauri v2 window.**
+  The Rust shell (`apps/plotvale-tauri/src-tauri`) owns the project and exposes it
+  as typed commands; the frontend holds no file I/O. The egui/eframe/dock crates,
+  `rfd`, and the whole `crates/ui` crate are gone: the core crates are untouched
+  and shared with `plotvale-cli`.
+- Word counts run locally in TypeScript with the rules of
+  `plotvale-model::count_words`, so typing a 150k-word scene never waits on IPC,
+  and counts no longer re-scan the project on every frame.
+- New project shortcuts: the desktop app opens a `.plotvale` file or folder given
+  as a command-line argument, ready to write (the editor tab comes to the front
+  with the first manuscript scene selected).
+- Added `editor_find`, `snapshot_title`, `export_preview`, `export_dedication`,
+  and `manual_body` to both locale files.
 - Removed three dependencies that no code used (`ropey`, `serde_json` in the model,
   `tempfile`), and aligned the workspace version with the released 0.2.0.
 - Every repository link now points to the real repository; the architecture notes
@@ -34,8 +47,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `.plotvale` format v1 (spec in `docs/format-spec.md`): zip of Markdown + JSON
   with stable IDs, atomic saves, rotating backups, crash recovery,
   folder mode for Git/sync.
-- Graphical interface (eframe/egui): binder, editor with inline Markdown styling,
-  inspector, corkboard, global search, snapshots, goals, statistics, export.
+- Graphical interface: binder, editor with Markdown toolbar, inspector,
+  corkboard, global search, snapshots, goals, statistics, export.
 - Bilingual English/Italian interface with key-parity tests.
 - CLI: `new`, `verify`, `stats`, `export` (md/txt/html/docx/epub).
 - Export: TXT, Markdown, HTML, DOCX, EPUB from a single composition engine.

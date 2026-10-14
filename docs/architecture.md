@@ -2,9 +2,10 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ apps/plotvale (eframe)   apps/plotvale-cli (clap)   │
+│ apps/plotvale-tauri: React 19 UI in a Tauri v2 window    │
+│ apps/plotvale-cli (clap)                                 │
 ├─────────────────────────────────────────────────────────┤
-│ crates/ui: binder, editor, corkboard, inspector, i18n   │
+│ src-tauri: state + #[tauri::command] API over the core   │
 ├──────────┬──────────┬───────────┬────────────────────────┤
 │ search   │ compile  │  export   │ project                │
 │ index,   │ sections,│ md/txt/   │ zip, atomic, backups,  │
@@ -23,8 +24,13 @@
 - **compile** turns an ordered node selection into `Compiled`
   (title, author, typed sections, layout hints).
 - **export** renders `Compiled` into every format: same content everywhere.
-- **ui** keeps a mirror of the open text (`DocView`) and flushes it into the model on
-  every change; autosave fires after 3 s of idle time.
+- **The desktop shell** (`apps/plotvale-tauri/src-tauri`) owns the open `Project`, the
+  profiles, and the save path behind a `Mutex`, and exposes them as typed commands.
+  The React frontend never touches the filesystem.
+- **The React interface** keeps its own mirror of the open texts for instant typing and
+  flushes each document to Rust debounced (600 ms); autosave writes to disk after 3 s of
+  idle time. Word counts run locally in TypeScript with the same rules as
+  `plotvale-model::count_words`, so no keystroke waits on IPC.
 - **Word-count rules** (`WordCounts`): a word = a run with at least one alphanumeric
   character separated by whitespace; `don't`, numbers, and hyphenated forms each count
   as a single word. Same rule everywhere (editor, goals, statistics).

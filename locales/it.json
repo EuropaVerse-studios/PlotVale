@@ -146,6 +146,7 @@
   "export_fail": "Esportazione non riuscita",
   "export_keep_notes": "Includi le annotazioni [[nota: …]]",
   "editor_hint": "Scegli una scena nella struttura a sinistra, oppure creane una con il menu +.",
+  "editor_large_plain": "Documento grande: vista semplice per restare fluido.",
   "view_scrivenings": "Modifica continua (scrivenings)",
   "about_title": "PlotVale",
   "about_text": "L'anti-Scrivener libero: gratis, open source, senza lucchetti.\nProgetto indipendente, ispirato alla filosofia ArtCraft.\nLicenza MIT OR Apache-2.0.",
@@ -216,5 +217,13 @@
   "fmt_list": "Elenco puntato",
   "fmt_note": "Annotazione (non esportata)",
   "fmt_size_up": "Testo più grande",
-  "fmt_size_down": "Testo più piccolo"
+  "fmt_size_down": "Testo più piccolo",
+  "editor_find": "Cerca nel documento…",
+  "editor_find_next": "Avanti",
+  "editor_find_prev": "Indietro",
+  "snapshot_title": "Istantanea",
+  "snapshot_empty": "Ancora nessuna istantanea.",
+  "export_preview": "Anteprima",
+  "export_dedication": "Dedica (facoltativa)",
+  "manual_body": "1. Crea scene dal menu + nella struttura.\n2. Scrivi nell'editor; tutto si salva da solo.\n3. Tieni traccia di sinossi e stato nell'inspector.\n4. Confronta le scene nella bacheca.\n5. Cerca in tutto il progetto dalla scheda cerca.\n6. Esporta il manoscritto da File > Esporta."
 }

@@ -24,7 +24,9 @@ does not actually do.
 - No `unwrap()`/`expect()` on user-reachable paths: errors via `thiserror`, with
   clear messages (translated in the UI) for interface-facing failures.
 - The core (`model`, `project`, `search`, `compile`, `export`) **must not depend
-  on egui**: it has to stay testable without a GUI and compilable to WASM.
+  on a GUI toolkit**: it has to stay testable without a GUI and compilable to WASM.
+  The React + Tauri interface talks to the core only through the commands in
+  `apps/plotvale-tauri/src-tauri`.
 - Every user-visible interface string goes through `t("key")` with an entry in
   both `locales/en.json` **and** `locales/it.json`
   (`cargo run -p xtask -- check-locales`).

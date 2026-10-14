@@ -10,6 +10,7 @@ here, and everything else is a menu item.
 | `Ctrl+S` (`Cmd+S` on macOS) | Save the project. If it has never been saved, opens *Save as…*. |
 | `Ctrl+B` (`Cmd+B`) | Bold — in the editor, when it has focus. |
 | `Ctrl+I` (`Cmd+I`) | Italic — in the editor, when it has focus. |
+| `Ctrl+F` (`Cmd+F`) | Find in the open document. `Enter` jumps to the next hit, `Shift+Enter` to the previous one. |
 
 `Ctrl+B` and `Ctrl+I` wrap the current selection and **toggle**: pressing them again on
 already-formatted text removes the markers. See [formatting](formatting.md).

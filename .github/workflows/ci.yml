@@ -24,3 +24,26 @@ jobs:
         run: cargo test --workspace
       - name: Locale parity
         run: cargo run -p xtask -- check-locales
+
+  frontend:
+    name: react + tauri shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/plotvale-tauri/package-lock.json
+      - name: Install
+        working-directory: apps/plotvale-tauri
+        run: npm ci
+      - name: Typecheck and bundle
+        working-directory: apps/plotvale-tauri
+        run: npm run build
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Tauri shell lint
+        working-directory: apps/plotvale-tauri/src-tauri
+        run: cargo clippy --lib -- -D warnings

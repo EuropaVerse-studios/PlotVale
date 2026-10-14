@@ -7,8 +7,9 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 
 **PlotVale** is a free and open-source program for organizing and writing novels,
-short stories, and long-form texts: a libre alternative to Scrivener, written in
-**pure Rust**, designed for **hobbyist writers** as well as seasoned novelists.
+short stories, and long-form texts: a libre alternative to Scrivener with a
+**Rust core** and a **React + Tauri desktop interface**, designed for **hobbyist
+writers** as well as seasoned novelists.
 
 > An **independent project** inspired by the ArtCraft philosophy — free creative
 > tools, open formats, no lock-in. Not affiliated with, endorsed by, or part of
@@ -31,18 +32,22 @@ short stories, and long-form texts: a libre alternative to Scrivener, written in
 Version **0.2.0** — working foundations (see `ROADMAP.md` for milestones):
 
 - [x] Data model, `.plotvale` format, atomic saves, backups, crash recovery
-- [x] Hierarchical binder, editor with inline Markdown styling, inspector, corkboard
+- [x] Hierarchical binder, editor with Markdown toolbar, inspector, corkboard
+- [x] React 19 + Tauri v2 desktop interface (TypeScript, Vite)
 - [x] Global search, snapshots, goals, statistics
 - [x] TXT/Markdown/HTML/DOCX/EPUB export, `plotvale-cli`
 - [ ] Typeset PDF (Typst), spell checking, Scrivener import
 
 ## Quick start
 
-You need stable Rust ≥ 1.90 ([install via rustup](https://rustup.rs/)).
+You need stable Rust ≥ 1.90 ([install via rustup](https://rustup.rs/)) plus
+Node.js ≥ 20 for the desktop interface.
 
 ```sh
-# graphical interface
-cargo run -p plotvale
+# desktop app (React + Tauri): installs npm deps and opens the window
+cd apps/plotvale-tauri
+npm install
+npm run tauri dev
 
 # command line: create, verify, stats, export
 cargo run -p plotvale-cli -- new "My novel.plotvale" --title "My novel"
@@ -50,11 +55,15 @@ cargo run -p plotvale-cli -- stats "My novel.plotvale"
 cargo run -p plotvale-cli -- verify "My novel.plotvale"
 cargo run -p plotvale-cli -- export "My novel.plotvale" --format epub --out novel.epub
 
-# quality gates (also enforced by CI on Windows, macOS, Linux)
+# quality gates (the Rust ones are enforced by CI on Windows, macOS, Linux)
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo run -p xtask -- check-locales
+
+# frontend checks (inside apps/plotvale-tauri)
+npm run build          # tsc + vite build
+cd src-tauri && cargo clippy --lib
 ```
 
 ## Documentation
@@ -81,8 +90,8 @@ crates/project/   .plotvale reading/writing, atomic saves, backups, migrations
 crates/search/    full-text index, regex, saved queries
 crates/compile/   composition engine: selection → sections → blocks
 crates/export/    TXT/Markdown/HTML/DOCX/EPUB renderers
-crates/ui/        egui interface: binder, editor, corkboard, inspector
-apps/plotvale/      desktop app (window)
+apps/plotvale-tauri/          React 19 + Tauri v2 desktop interface
+apps/plotvale-tauri/src-tauri/  Rust shell: state, commands, window config
 apps/plotvale-cli/  command-line app
 xtask/            automation (e.g. translation parity check)
 locales/          interface strings (en.json, it.json) — the app stays bilingual

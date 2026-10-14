@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = ["crates/*", "apps/*", "xtask"]
+# The Tauri app (npm + standalone Rust shell) is not a workspace member.
+exclude = ["apps/plotvale-tauri", "apps/plotvale-tauri/src-tauri"]
 
 [workspace.package]
 version = "0.2.0"
@@ -17,7 +19,8 @@ plotvale-project = { path = "crates/project" }
 plotvale-search = { path = "crates/search" }
 plotvale-compile = { path = "crates/compile" }
 plotvale-export = { path = "crates/export" }
-plotvale-ui = { path = "crates/ui" }
+# The desktop UI is React + TypeScript in apps/plotvale-tauri (Tauri v2 shell
+# in src-tauri reuses these core crates by path). No egui/eframe remains.
 # esterne
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -27,12 +30,6 @@ chrono = { version = "0.4", default-features = false, features = ["serde", "cloc
 zip = { version = "2", default-features = false, features = ["deflate"] }
 regex = "1"
 clap = { version = "4", features = ["derive"] }
-eframe = "0.36"
-egui = "0.36"
-image = { version = "0.25", default-features = false, features = ["png"] }
-egui-phosphor = { version = "0.14", default-features = false, features = ["regular"] }
-egui_dock = "0.21"
-rfd = "0.17"
 docx-rs = "0.4"
 epub-builder = "0.8"
 proptest = "1"

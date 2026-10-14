@@ -146,6 +146,7 @@
   "export_fail": "Export failed",
   "export_keep_notes": "Include [[note: …]] annotations",
   "editor_hint": "Pick a scene in the binder on the left, or create one with the + menu.",
+  "editor_large_plain": "Large document: plain view for speed.",
   "view_scrivenings": "Continuous editing (scrivenings)",
   "about_title": "PlotVale",
   "about_text": "The free anti-Scrivener: free, open source, no lock-in.\nIndependent project, inspired by the ArtCraft philosophy.\nMIT OR Apache-2.0 license.",
@@ -216,5 +217,13 @@
   "fmt_list": "Bulleted list",
   "fmt_note": "Annotation (not exported)",
   "fmt_size_up": "Bigger text",
-  "fmt_size_down": "Smaller text"
+  "fmt_size_down": "Smaller text",
+  "editor_find": "Find in document…",
+  "editor_find_next": "Next",
+  "editor_find_prev": "Previous",
+  "snapshot_title": "Snapshot",
+  "snapshot_empty": "No snapshots yet.",
+  "export_preview": "Preview",
+  "export_dedication": "Dedication (optional)",
+  "manual_body": "1. Create scenes from the + menu in the binder.\n2. Write in the editor; everything autosaves.\n3. Track synopsis and status in the inspector.\n4. Compare scenes on the corkboard.\n5. Search the whole project from the search tab.\n6. Export the manuscript from File > Export."
 }

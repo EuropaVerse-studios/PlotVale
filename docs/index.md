@@ -1,8 +1,9 @@
 # PlotVale documentation
 
 **PlotVale** is a free and open-source program for organizing and writing novels,
-short stories, and long-form texts: a libre alternative to Scrivener, written in
-**pure Rust**, designed for hobbyist writers as well as seasoned novelists.
+short stories, and long-form texts: a libre alternative to Scrivener with a
+**Rust core** and a **React + Tauri desktop interface**, designed for hobbyist
+writers as well as seasoned novelists.
 
 ![PlotVale](_static/banner.jpg)
 

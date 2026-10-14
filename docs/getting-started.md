@@ -14,25 +14,33 @@ minutes, most of which is compilation.
   The repository pins the channel in `rust-toolchain.toml`, so rustup picks the right
   toolchain automatically once you are inside the project.
 
-That is the whole list. PlotVale has no runtime dependencies, no accounts, and no
-network access: the graphical interface is `eframe`/`egui`, which draws itself.
+- **Node.js 20 or newer** for the desktop interface (React + Tauri). The CLI needs
+  only Rust.
+
+PlotVale has no accounts and no network access at runtime: your project stays on
+your disk.
 
 ```{note}
-On Linux, `eframe` needs the usual windowing and GPU libraries. If the window fails
-to appear, install your distribution's X11/Wayland development packages and make
-sure you have a working GPU driver.
+On Linux, Tauri needs the usual WebKitGTK and windowing libraries. If the window
+fails to appear, install your distribution's `webkit2gtk` (4.1) and X11/Wayland
+development packages, then re-run the app.
 ```
 
 ## Build and run
 
-From the repository root:
+The desktop app lives in `apps/plotvale-tauri`:
 
 ```sh
-# the graphical app
-cargo run -p plotvale
+cd apps/plotvale-tauri
+npm install            # once
+npm run tauri dev      # opens the window with hot reload
+npm run tauri build    # release binary and installers
+```
 
-# faster to use once compiled, slower to build
-cargo run --release -p plotvale
+Prefer the terminal? The CLI needs no Node:
+
+```sh
+cargo run -p plotvale-cli -- --help
 ```
 
 The first build compiles the whole workspace and takes a few minutes. Later builds are

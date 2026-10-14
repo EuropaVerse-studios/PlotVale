@@ -46,8 +46,8 @@ crates/project/   .plotvale reading/writing, atomic saves, backups, migrations
 crates/search/    full-text index, regex, saved queries
 crates/compile/   composition engine: selection -> sections -> blocks
 crates/export/    TXT/Markdown/HTML/DOCX/EPUB renderers
-crates/ui/        egui interface: binder, editor, corkboard, inspector
-apps/plotvale/    the desktop app
+apps/plotvale-tauri/          React 19 + Vite frontend of the desktop app
+apps/plotvale-tauri/src-tauri/  Rust shell: state, commands, window config
 apps/plotvale-cli/ the command line app
 xtask/            automation (translation parity check)
 locales/          interface strings (en.json, it.json)
@@ -58,9 +58,10 @@ docs/             this documentation
 
 These come from `AGENTS.md` and exist to keep the project maintainable:
 
-- **The core must not depend on egui.** `model`, `project`, `search`, `compile`, and
-  `export` have to stay testable without a GUI and compilable to WASM. Only `crates/ui`
-  knows about egui, and only `apps/plotvale` depends on `crates/ui`.
+- **The core must not depend on a GUI toolkit.** `model`, `project`, `search`, `compile`,
+  and `export` have to stay testable without a GUI and compilable to WASM. Only the
+  Tauri shell (`apps/plotvale-tauri/src-tauri`) depends on them for display, and it is
+  excluded from the Cargo workspace precisely so the core stays GUI-free.
 - **No `std::fs` in the core.** All filesystem access goes through `plotvale-project`,
   which is the single place that opens files.
 - **One composition engine.** `compile` turns a node selection into sections and blocks;
