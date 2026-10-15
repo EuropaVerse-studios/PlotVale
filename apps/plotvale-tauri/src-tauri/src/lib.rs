@@ -6,7 +6,7 @@ mod state;
 
 use std::sync::Mutex;
 
-use state::{AppState, InitialOpen};
+use state::InitialProject;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -69,10 +69,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-/// Project opened before the window existed (see `state::from_env`).
-///
-/// Held outside `AppState` so `initial_project` can hand it over exactly once
-/// while `AppState` keeps owning the same project for every other command.
-struct InitialProject(Option<InitialOpen>);
-

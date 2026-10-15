@@ -124,6 +124,12 @@ export interface ProjectDto {
   profiles: ProfilesFile;
 }
 
+export interface InitialOpen {
+  project: ProjectDto;
+  path: string;
+  folder_mode: boolean;
+}
+
 export interface ProjectStatus {
   has_project: boolean;
   path: string | null;

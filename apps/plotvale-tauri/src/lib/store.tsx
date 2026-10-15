@@ -527,6 +527,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Startup project from a command-line path / file association, if any.
+  // Runs once: `initial_project` hands the pre-opened project over and the
+  // editor shows it immediately instead of the welcome screen.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .initialProject()
+      .then((initial) => {
+        if (!cancelled && initial) {
+          install(initial.project, initial.path, initial.folder_mode);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [install]);
+
   const value: Store = {
     project,
     nodes,

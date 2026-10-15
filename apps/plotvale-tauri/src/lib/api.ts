@@ -7,6 +7,7 @@ import type {
   CollectionDef,
   CompileProfile,
   HitDto,
+  InitialOpen,
   LocationSheet,
   NodeDto,
   NodeMeta,
@@ -30,6 +31,7 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 export const api = {
+  initialProject: () => call<InitialOpen | null>("initial_project"),
   newProject: (title: string, author: string) =>
     call<ProjectDto>("new_project", { title, author }),
   openProject: (path: string) => call<ProjectDto>("open_project", { path }),

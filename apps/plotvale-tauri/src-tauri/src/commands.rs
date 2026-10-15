@@ -7,9 +7,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 
-use plotvale_compile::{
-    CompileProfile, ProfilesFile, compile, expand_selection,
-};
+use plotvale_compile::{CompileProfile, ProfilesFile, compile, expand_selection};
 use plotvale_export::{ExportFormat, export_to_file, render};
 use plotvale_model::{
     CharacterSheet, CollectionDef, LocationSheet, NodeId, NodeKind, Project, ProjectMeta, Targets,
@@ -20,8 +18,8 @@ use plotvale_search::{Index, SearchOptions};
 use tauri::State;
 
 use crate::state::{
-    AppState, ChapterWords, HitDto, ProjectDto, ProjectStatus, SaveInfo, StatsDto, parse_id,
-    parse_kind, project_dto,
+    AppState, ChapterWords, HitDto, InitialOpen, InitialProject, ProjectDto, ProjectStatus,
+    SaveInfo, StatsDto, parse_id, parse_kind, project_dto,
 };
 
 /// App version stamped into new manifests.
@@ -30,7 +28,9 @@ const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 type Backend = Mutex<AppState>;
 
 fn lock<'a>(state: &'a State<'_, Backend>) -> Result<MutexGuard<'a, AppState>, String> {
-    state.lock().map_err(|_| "backend state is poisoned".to_string())
+    state
+        .lock()
+        .map_err(|_| "backend state is poisoned".to_string())
 }
 
 fn open_project_of(state: &mut AppState) -> Result<&mut Project, String> {
@@ -44,9 +44,26 @@ fn open_project_of(state: &mut AppState) -> Result<&mut Project, String> {
 // Project lifecycle
 // ---------------------------------------------------------------------------
 
+/// Startup project from a command-line path / file association, if any.
+///
+/// Hands the pre-opened project over exactly once; later calls return `None`.
+#[tauri::command]
+pub fn initial_project(
+    state: tauri::State<'_, Mutex<InitialProject>>,
+) -> Result<Option<InitialOpen>, String> {
+    let mut holder = state
+        .lock()
+        .map_err(|_| "backend state is poisoned".to_string())?;
+    Ok(holder.0.take())
+}
+
 /// Creates a project (same starter content as the CLI/`Project::new`).
 #[tauri::command]
-pub fn new_project(state: State<'_, Backend>, title: String, author: String) -> Result<ProjectDto, String> {
+pub fn new_project(
+    state: State<'_, Backend>,
+    title: String,
+    author: String,
+) -> Result<ProjectDto, String> {
     let mut backend = lock(&state)?;
     let title = title.trim();
     let title = if title.is_empty() { "Untitled" } else { title };
@@ -144,7 +161,10 @@ pub fn project_status(state: State<'_, Backend>) -> Result<ProjectStatus, String
     let backend = lock(&state)?;
     Ok(ProjectStatus {
         has_project: backend.project.is_some(),
-        path: backend.path.as_ref().map(|p| p.to_string_lossy().to_string()),
+        path: backend
+            .path
+            .as_ref()
+            .map(|p| p.to_string_lossy().to_string()),
         folder_mode: backend.folder_mode,
         dirty: backend.dirty,
         title: backend
@@ -174,7 +194,10 @@ pub fn create_node(
     let kind = parse_kind(&kind)?;
     let title = title.trim();
     let title = if title.is_empty() { "Untitled" } else { title };
-    let id = project.tree.create(parent_id, kind, title).map_err(|e| e.to_string())?;
+    let id = project
+        .tree
+        .create(parent_id, kind, title)
+        .map_err(|e| e.to_string())?;
     match kind {
         NodeKind::CharacterSheet => project.sheets.characters.push(CharacterSheet {
             node_id: id,
@@ -213,18 +236,31 @@ pub fn rename_node(state: State<'_, Backend>, id: String, title: String) -> Resu
     let mut backend = lock(&state)?;
     let project = open_project_of(&mut backend)?;
     let id = parse_id(&id)?;
-    project.tree.rename(id, title.trim()).map_err(|e| e.to_string())?;
+    project
+        .tree
+        .rename(id, title.trim())
+        .map_err(|e| e.to_string())?;
     // Sheets mirror the node title.
     if let Ok(node) = project.tree.get(id) {
         let title = node.title.clone();
         match node.kind {
             NodeKind::CharacterSheet => {
-                if let Some(sheet) = project.sheets.characters.iter_mut().find(|s| s.node_id == id) {
+                if let Some(sheet) = project
+                    .sheets
+                    .characters
+                    .iter_mut()
+                    .find(|s| s.node_id == id)
+                {
                     sheet.name = title;
                 }
             }
             NodeKind::LocationSheet => {
-                if let Some(sheet) = project.sheets.locations.iter_mut().find(|s| s.node_id == id) {
+                if let Some(sheet) = project
+                    .sheets
+                    .locations
+                    .iter_mut()
+                    .find(|s| s.node_id == id)
+                {
                     sheet.name = title;
                 }
             }
@@ -247,7 +283,10 @@ pub fn move_node(
     let mut backend = lock(&state)?;
     let project = open_project_of(&mut backend)?;
     let (id, new_parent) = (parse_id(&id)?, parse_id(&new_parent)?);
-    project.tree.move_node(id, new_parent, pos).map_err(|e| e.to_string())?;
+    project
+        .tree
+        .move_node(id, new_parent, pos)
+        .map_err(|e| e.to_string())?;
     project.touch();
     backend.dirty = true;
     Ok(())
@@ -331,8 +370,14 @@ pub fn empty_trash(state: State<'_, Backend>) -> Result<Vec<String>, String> {
         for id in &removed {
             project.docs.remove(id);
         }
-        project.sheets.characters.retain(|s| !gone.contains(&s.node_id));
-        project.sheets.locations.retain(|s| !gone.contains(&s.node_id));
+        project
+            .sheets
+            .characters
+            .retain(|s| !gone.contains(&s.node_id));
+        project
+            .sheets
+            .locations
+            .retain(|s| !gone.contains(&s.node_id));
         let mut snap_gone = Vec::new();
         project.snapshots.retain(|s| {
             let keep = !gone.contains(&s.doc_id);
@@ -358,13 +403,22 @@ pub fn delete_node(state: State<'_, Backend>, id: String) -> Result<Vec<String>,
     let removed = {
         let project = open_project_of(&mut backend)?;
         let id = parse_id(&id)?;
-        let removed = project.tree.delete_permanently(id).map_err(|e| e.to_string())?;
+        let removed = project
+            .tree
+            .delete_permanently(id)
+            .map_err(|e| e.to_string())?;
         let gone: std::collections::HashSet<NodeId> = removed.iter().copied().collect();
         for gone_id in &removed {
             project.docs.remove(gone_id);
         }
-        project.sheets.characters.retain(|s| !gone.contains(&s.node_id));
-        project.sheets.locations.retain(|s| !gone.contains(&s.node_id));
+        project
+            .sheets
+            .characters
+            .retain(|s| !gone.contains(&s.node_id));
+        project
+            .sheets
+            .locations
+            .retain(|s| !gone.contains(&s.node_id));
         let mut snap_gone = Vec::new();
         project.snapshots.retain(|s| {
             let keep = !gone.contains(&s.doc_id);
@@ -388,7 +442,10 @@ pub fn delete_node(state: State<'_, Backend>, id: String) -> Result<Vec<String>,
 pub fn get_tree(state: State<'_, Backend>) -> Result<Vec<crate::state::NodeDto>, String> {
     use crate::state::NodeDto;
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let mut nodes: Vec<NodeDto> = project
         .tree
         .ids()
@@ -411,7 +468,10 @@ pub fn get_tree(state: State<'_, Backend>) -> Result<Vec<crate::state::NodeDto>,
 pub fn get_node(state: State<'_, Backend>, id: String) -> Result<crate::state::NodeDto, String> {
     use crate::state::NodeDto;
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let id = parse_id(&id)?;
     let node = project.tree.get(id).map_err(|e| e.to_string())?;
     Ok(NodeDto {
@@ -432,7 +492,10 @@ pub fn get_node(state: State<'_, Backend>, id: String) -> Result<crate::state::N
 #[tauri::command]
 pub fn get_doc_text(state: State<'_, Backend>, id: String) -> Result<String, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let id = parse_id(&id)?;
     Ok(project.doc_text(id).to_string())
 }
@@ -507,7 +570,12 @@ pub fn upsert_character(
 ) -> Result<(), String> {
     let mut backend = lock(&state)?;
     let project = open_project_of(&mut backend)?;
-    match project.sheets.characters.iter_mut().find(|s| s.node_id == sheet.node_id) {
+    match project
+        .sheets
+        .characters
+        .iter_mut()
+        .find(|s| s.node_id == sheet.node_id)
+    {
         Some(existing) => *existing = sheet,
         None => project.sheets.characters.push(sheet),
     }
@@ -524,7 +592,12 @@ pub fn upsert_location(
 ) -> Result<(), String> {
     let mut backend = lock(&state)?;
     let project = open_project_of(&mut backend)?;
-    match project.sheets.locations.iter_mut().find(|s| s.node_id == sheet.node_id) {
+    match project
+        .sheets
+        .locations
+        .iter_mut()
+        .find(|s| s.node_id == sheet.node_id)
+    {
         Some(existing) => *existing = sheet,
         None => project.sheets.locations.push(sheet),
     }
@@ -566,7 +639,10 @@ pub fn list_snapshots(
     doc_id: String,
 ) -> Result<Vec<plotvale_model::SnapshotMeta>, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let doc_id = parse_id(&doc_id)?;
     Ok(project
         .snapshots
@@ -611,7 +687,10 @@ pub fn create_snapshot(
 #[tauri::command]
 pub fn get_snapshot_text(state: State<'_, Backend>, snap_id: String) -> Result<String, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     project
         .snapshot_texts
         .get(&snap_id)
@@ -664,7 +743,10 @@ pub fn search_project(
     case_sensitive: bool,
 ) -> Result<Vec<HitDto>, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let index = Index::build(project);
     let hits = index
         .search(
@@ -702,7 +784,10 @@ pub fn search_project(
 #[tauri::command]
 pub fn project_stats(state: State<'_, Backend>) -> Result<StatsDto, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let mut total = WordCounts::default();
     let mut docs_with_text = 0usize;
     for id in project.tree.ids() {
@@ -716,7 +801,11 @@ pub fn project_stats(state: State<'_, Backend>) -> Result<StatsDto, String> {
         total = total + counts;
     }
     let mut per_chapter = Vec::new();
-    for child in project.tree.children_of(project.tree.draft_root).unwrap_or_default() {
+    for child in project
+        .tree
+        .children_of(project.tree.draft_root)
+        .unwrap_or_default()
+    {
         let title = project
             .tree
             .get(child)
@@ -742,7 +831,10 @@ pub fn project_stats(state: State<'_, Backend>) -> Result<StatsDto, String> {
 #[tauri::command]
 pub fn doc_words(state: State<'_, Backend>, id: String) -> Result<WordCounts, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let id = parse_id(&id)?;
     Ok(count_words(project.doc_text(id)))
 }
@@ -762,7 +854,10 @@ pub fn total_words(state: State<'_, Backend>) -> Result<usize, String> {
 #[tauri::command]
 pub fn subtree_words(state: State<'_, Backend>, id: String) -> Result<usize, String> {
     let backend = lock(&state)?;
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let id = parse_id(&id)?;
     Ok(project.subtree_words(id))
 }
@@ -819,7 +914,10 @@ fn compile_locked(
     keep_notes: Option<bool>,
     selection: Vec<String>,
 ) -> Result<(plotvale_compile::Compiled, CompileProfile), String> {
-    let project = backend.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = backend
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let mut profile = match profile_name {
         Some(name) => backend
             .profiles
@@ -892,7 +990,12 @@ pub fn list_collections(state: State<'_, Backend>) -> Result<Vec<CollectionDef>,
 pub fn add_collection(state: State<'_, Backend>, collection: CollectionDef) -> Result<(), String> {
     let mut backend = lock(&state)?;
     let project = open_project_of(&mut backend)?;
-    if project.meta.collections.iter().any(|c| c.name == collection.name) {
+    if project
+        .meta
+        .collections
+        .iter()
+        .any(|c| c.name == collection.name)
+    {
         return Err(format!("collection already exists: {}", collection.name));
     }
     project.meta.collections.push(collection);

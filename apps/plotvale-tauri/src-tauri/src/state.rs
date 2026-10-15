@@ -9,8 +9,8 @@ use std::path::PathBuf;
 
 use plotvale_compile::ProfilesFile;
 use plotvale_model::{
-    CharacterSheet, LocationSheet, Manifest, Node, NodeId, NodeKind, NodeMeta, Project, ProjectMeta,
-    SnapshotMeta, Targets, WordCounts,
+    CharacterSheet, LocationSheet, Manifest, Node, NodeId, NodeKind, NodeMeta, Project,
+    ProjectMeta, SnapshotMeta, Targets, WordCounts,
 };
 use serde::Serialize;
 
@@ -80,6 +80,13 @@ pub struct InitialOpen {
     pub path: String,
     pub folder_mode: bool,
 }
+
+/// One-shot holder for the startup project (see `from_env`).
+///
+/// Kept outside `AppState` so `initial_project` hands it over exactly once
+/// while `AppState` keeps owning the same project for every other command.
+#[derive(Default)]
+pub struct InitialProject(pub Option<InitialOpen>);
 
 /// Save-location and dirty state for the status bar / close guard.
 #[derive(Clone, Debug, Serialize)]
@@ -177,7 +184,10 @@ pub fn parse_kind(raw: &str) -> Result<NodeKind, String> {
 
 /// Builds the full DTO from backend state (project must be open).
 pub fn project_dto(state: &AppState) -> Result<ProjectDto, String> {
-    let project = state.project.as_ref().ok_or_else(|| "no project open".to_string())?;
+    let project = state
+        .project
+        .as_ref()
+        .ok_or_else(|| "no project open".to_string())?;
     let mut nodes: Vec<NodeDto> = project
         .tree
         .ids()
