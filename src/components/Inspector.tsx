@@ -183,12 +183,12 @@ const MetaEditor = memo(function MetaEditor({ id }: { id: string }) {
             <input
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
-              placeholder="name"
+              placeholder={t("insp_custom_name")}
             />
             <input
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
-              placeholder="value"
+              placeholder={t("insp_custom_value")}
             />
             <button
               className="btn small"
@@ -338,7 +338,7 @@ function SnapshotBox({ id }: { id: string }) {
       setLabel("");
       setSnaps(await api.listSnapshots(id));
     } catch (e) {
-      store.setStatus(`Error: ${e instanceof Error ? e.message : e}`);
+      store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`);
     }
   }
 
@@ -367,7 +367,7 @@ function SnapshotBox({ id }: { id: string }) {
                 .restoreSnapshot(id, s.id)
                 .then(() => store.adoptBackendText(id))
                 .catch((e: unknown) =>
-                  store.setStatus(`Error: ${e instanceof Error ? e.message : e}`),
+                  store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`),
                 )
             }
           >
@@ -381,7 +381,7 @@ function SnapshotBox({ id }: { id: string }) {
                 .then(() => api.listSnapshots(id))
                 .then(setSnaps)
                 .catch((e: unknown) =>
-                  store.setStatus(`Error: ${e instanceof Error ? e.message : e}`),
+                  store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`),
                 )
             }
           >
@@ -425,7 +425,7 @@ export function SnapshotCompare({
                 .then(() => store.adoptBackendText(docId))
                 .then(onClose)
                 .catch((e: unknown) =>
-                  store.setStatus(`Error: ${e instanceof Error ? e.message : e}`),
+                  store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`),
                 )
             }
           >

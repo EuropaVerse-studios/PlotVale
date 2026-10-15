@@ -10,9 +10,11 @@ Priorities: (1) never lose the user's text, (2) stay simple for a beginner,
 
 - GUI-less core: `model` → `project` → `search`/`compile` → `export`. The desktop
   app depends on the core, never the other way around: the Tauri shell
-  (`apps/plotvale-tauri/src-tauri`) holds state and exposes commands, the React
-  frontend holds no file I/O. No `std::fs` in the core: I/O goes through
+  (`src-tauri`) holds state and exposes commands, the React frontend (`src/`)
+  holds no file I/O. No `std::fs` in the core: I/O goes through
   `plotvale-project` (abstraction ready for WASM/IndexedDB).
+- Single project: one Cargo workspace (`crates/*`, `src-tauri`, `cli`, `xtask`,
+  one `Cargo.lock`) plus one `package.json` at the root for the frontend.
 - Interface: React 19 + TypeScript + Vite inside a Tauri v2 window; every string
   via `t("key")` and the shared `locales/*.json`. Editor text stays local and
   syncs debounced, so large scenes never block on IPC.
@@ -33,7 +35,7 @@ Priorities: (1) never lose the user's text, (2) stay simple for a beginner,
 ## Commands
 
 ```sh
-cd apps/plotvale-tauri && npm install
+npm install                             # frontend deps (project root)
 npm run tauri dev                       # desktop app (React + Tauri)
 npm run build                           # typecheck + frontend bundle
 cd src-tauri && cargo clippy --lib      # backend lint

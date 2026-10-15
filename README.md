@@ -45,7 +45,6 @@ Node.js ≥ 20 for the desktop interface.
 
 ```sh
 # desktop app (React + Tauri): installs npm deps and opens the window
-cd apps/plotvale-tauri
 npm install
 npm run tauri dev
 
@@ -61,7 +60,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo run -p xtask -- check-locales
 
-# frontend checks (inside apps/plotvale-tauri)
+# frontend checks (project root)
 npm run build          # tsc + vite build
 cd src-tauri && cargo clippy --lib
 ```
@@ -85,18 +84,23 @@ python -m venv .venv
 ## Repository layout
 
 ```
+src/              React 19 + TypeScript desktop interface (Vite)
+public/           static frontend assets (icons, brand images)
+src-tauri/        Rust shell: state, commands, window config (Tauri v2)
 crates/model/     data model: tree, documents, sheets, goals, word counting
 crates/project/   .plotvale reading/writing, atomic saves, backups, migrations
 crates/search/    full-text index, regex, saved queries
 crates/compile/   composition engine: selection → sections → blocks
 crates/export/    TXT/Markdown/HTML/DOCX/EPUB renderers
-apps/plotvale-tauri/          React 19 + Tauri v2 desktop interface
-apps/plotvale-tauri/src-tauri/  Rust shell: state, commands, window config
-apps/plotvale-cli/  command-line app
+cli/              command-line app
 xtask/            automation (e.g. translation parity check)
 locales/          interface strings (en.json, it.json) — the app stays bilingual
 docs/             documentation sources (Sphinx, published on Read the Docs)
 ```
+
+One project, one folder: a single Cargo workspace (one `Cargo.lock`) covers
+the core crates, the Tauri shell, the CLI, and xtask; `package.json` at the
+root covers the React frontend.
 
 ## Contributing
 

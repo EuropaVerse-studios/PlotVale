@@ -6,10 +6,14 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - **The whole interface is now React 19 + TypeScript inside a Tauri v2 window.**
-  The Rust shell (`apps/plotvale-tauri/src-tauri`) owns the project and exposes it
+  The Rust shell (`src-tauri`) owns the project and exposes it
   as typed commands; the frontend holds no file I/O. The egui/eframe/dock crates,
   `rfd`, and the whole `crates/ui` crate are gone: the core crates are untouched
   and shared with `plotvale-cli`.
+- **Single project layout.** The frontend (`src/`, `public/`, `package.json`) and
+  the shell (`src-tauri/`) live at the repository root next to `crates/`; the CLI
+  moved from `apps/plotvale-cli` to `cli/`. One Cargo workspace (one `Cargo.lock`)
+  covers the core, the shell, the CLI, and xtask.
 - Word counts run locally in TypeScript with the rules of
   `plotvale-model::count_words`, so typing a 150k-word scene never waits on IPC,
   and counts no longer re-scan the project on every frame.

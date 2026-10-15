@@ -28,10 +28,10 @@ development packages, then re-run the app.
 
 ## Build and run
 
-The desktop app lives in `apps/plotvale-tauri`:
+The desktop app lives at the project root (frontend in `src/`, shell in
+`src-tauri/`):
 
 ```sh
-cd apps/plotvale-tauri
 npm install            # once
 npm run tauri dev      # opens the window with hot reload
 npm run tauri build    # release binary and installers

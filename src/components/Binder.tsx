@@ -50,7 +50,7 @@ function Binder() {
     try {
       await store.createNode(parent, kind, title);
     } catch (e) {
-      store.setStatus(`Error: ${e instanceof Error ? e.message : e}`);
+      store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`);
     }
   }
 
@@ -254,7 +254,7 @@ function CtxMenu({
   function act(fn: () => Promise<unknown>) {
     onClose();
     void fn().catch((e: unknown) =>
-      store.setStatus(`Error: ${e instanceof Error ? e.message : e}`),
+      store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`),
     );
   }
 

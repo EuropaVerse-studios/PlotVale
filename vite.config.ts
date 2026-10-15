@@ -16,11 +16,6 @@ export default defineConfig(() => ({
   server: {
     port: 1420,
     strictPort: true,
-    // The UI reuses the monorepo's shared ../../locales/*.json (single
-    // source of truth): allow Vite to read above the app directory.
-    fs: {
-      allow: ["..", "../..", "../../.."],
-    },
     host: host || false,
     hmr: host
       ? {

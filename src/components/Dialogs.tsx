@@ -8,6 +8,7 @@ import { useStore } from "../lib/store";
 import { pickExportFile, pickSaveBundle, pickSaveFolder } from "../lib/files";
 import type { StatsDto, Targets } from "../lib/types";
 import pkg from "../../package.json";
+import logoUrl from "../assets/logo.png";
 
 export function Modal({
   title,
@@ -155,19 +156,20 @@ export function StatsDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-const FORMATS: [string, string, string][] = [
-  ["md", "Markdown (.md)", "md"],
-  ["txt", "Testo (.txt)", "txt"],
-  ["html", "Pagina web (.html)", "html"],
-  ["docx", "Word (.docx)", "docx"],
-  ["epub", "Ebook (.epub)", "epub"],
-];
-
 export function ExportDialog({ onClose }: { onClose: () => void }) {
   const { t } = useLocale();
+  // Display names go through i18n (the old module-level list mixed Italian
+  // and English no matter the active language).
+  const FORMATS: [string, string, string][] = [
+    ["md", t("export_fmt_md"), "md"],
+    ["txt", t("export_fmt_txt"), "txt"],
+    ["html", t("export_fmt_html"), "html"],
+    ["docx", t("export_fmt_docx"), "docx"],
+    ["epub", t("export_fmt_epub"), "epub"],
+  ];
   const store = useStore();
   const profiles = store.project?.profiles;
-  const [profileName, setProfileName] = useState(profiles?.active ?? "manoscritto");
+  const [profileName, setProfileName] = useState(profiles?.active ?? "");
   const [keepNotes, setKeepNotes] = useState(
     profiles?.profiles.find((p) => p.name === profiles.active)?.keep_notes ?? false,
   );
@@ -211,8 +213,14 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   }
 
   async function doExport(format: string, displayName: string, ext: string) {
-    const title = store.project?.manifest.title ?? "manuscript";
-    const dest = await pickExportFile(title, displayName, ext);
+    const title = store.project?.manifest.title ?? t("untitled");
+    const dest = await pickExportFile(
+      title,
+      displayName,
+      ext,
+      t("export_title_dialog"),
+      t("untitled"),
+    );
     if (!dest) return;
     setBusy(true);
     try {
@@ -277,8 +285,14 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
   const { t } = useLocale();
   return (
     <Modal title={t("about_title")} onClose={onClose}>
+      <div className="about-hero">
+        <img className="about-logo" src={logoUrl} alt="PlotVale" />
+        <div>
+          <strong>PlotVale</strong>
+          <p className="small dim">v{(pkg as { version: string }).version}</p>
+        </div>
+      </div>
       <p style={{ whiteSpace: "pre-line" }}>{t("about_text")}</p>
-      <p className="small dim">PlotVale {(pkg as { version: string }).version}</p>
     </Modal>
   );
 }
@@ -351,10 +365,9 @@ export function WizardDialog({ onClose }: { onClose: () => void }) {
 
   async function browse() {
     if (folderMode) {
-      const p = await pickSaveFolder();
+      const p = await pickSaveFolder(t("save_title_folder"));
       if (p) setLocation(p);
-    } else {
-      const p = await pickSaveBundle(title.trim() === "" ? "Untitled" : title.trim());
+    } else {        const p = await pickSaveBundle(title.trim() === "" ? t("untitled") : title.trim(), t("save_title"), t("filter_project"));
       if (p) setLocation(p);
     }
   }
@@ -400,7 +413,7 @@ export function WizardDialog({ onClose }: { onClose: () => void }) {
       }
       onClose();
     } catch (e) {
-      store.setStatus(`Error: ${e instanceof Error ? e.message : e}`);
+      store.setStatus(`${t("err_generic")}: ${e instanceof Error ? e.message : e}`);
     } finally {
       setBusy(false);
     }

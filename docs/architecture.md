@@ -2,8 +2,8 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ apps/plotvale-tauri: React 19 UI in a Tauri v2 window    │
-│ apps/plotvale-cli (clap)                                 │
+│ src: React 19 UI in a Tauri v2 window                     │
+│ cli/plotvale-cli (clap)                                  │
 ├─────────────────────────────────────────────────────────┤
 │ src-tauri: state + #[tauri::command] API over the core   │
 ├──────────┬──────────┬───────────┬────────────────────────┤
@@ -24,7 +24,7 @@
 - **compile** turns an ordered node selection into `Compiled`
   (title, author, typed sections, layout hints).
 - **export** renders `Compiled` into every format: same content everywhere.
-- **The desktop shell** (`apps/plotvale-tauri/src-tauri`) owns the open `Project`, the
+- **The desktop shell** (`src-tauri`) owns the open `Project`, the
   profiles, and the save path behind a `Mutex`, and exposes them as typed commands.
   The React frontend never touches the filesystem.
 - **The React interface** keeps its own mirror of the open texts for instant typing and

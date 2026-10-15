@@ -14,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { api } from "./api";
 import { countWords } from "./count";
+import { useLocale } from "./i18n";
 import type {
   CharacterSheet,
   LocationSheet,
@@ -63,6 +64,8 @@ interface Store {
   setFontSize: (v: number) => void;
   toggleCollapsed: (id: string) => void;
   setStatus: (msg: string) => void;
+  /** Locale key of the blocking operation in flight, if any (busy overlay). */
+  busy: string | null;
 
   doNew: (title: string, author: string) => Promise<void>;
   doOpen: (path: string) => Promise<void>;
@@ -107,11 +110,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [path, setPath] = useState<string | null>(null);
   const [folderMode, setFolderMode] = useState(false);
   const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
   const [expert, setExpert] = useState(false);
   const [scrivenings, setScrivenings] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [fontSize, setFontSize] = useState(17);
   const [centerTab, setCenterTab] = useState<CenterTab>("editor");
+  // Error prefixes go through i18n: the status bar never shows English
+  // hardcoded text, whatever the backend reports.
+  const { t } = useLocale();
 
   const lastEdit = useRef(0);
   const syncTimers = useRef<Record<string, number>>({});
@@ -182,25 +189,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const doNew = useCallback(
     async (title: string, author: string) => {
+      setBusy("busy_creating");
       try {
         install(await api.newProject(title, author), null, false);
       } catch (e) {
-        fail(setStatus, "New project failed", e);
+        fail(setStatus, t("err_new"), e);
+      } finally {
+        setBusy(null);
       }
     },
-    [install],
+    [install, t],
   );
 
   const doOpen = useCallback(
     async (openPath: string) => {
+      setBusy("busy_opening");
       try {
         const folder = await isDirectoryHint(openPath);
         install(await api.openProject(openPath), openPath, folder);
       } catch (e) {
-        fail(setStatus, "Open failed", e);
+        fail(setStatus, t("err_open"), e);
+      } finally {
+        setBusy(null);
       }
     },
-    [install],
+    [install, t],
   );
 
   const doSave = useCallback(async (): Promise<boolean> => {
@@ -209,6 +222,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(syncTimers.current[id]);
     }
     syncTimers.current = {};
+    setBusy("busy_saving");
     try {
       const entries = await snapshotTexts();
       for (const [id, text] of entries) await api.setDocText(id, text);
@@ -217,10 +231,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDirty(false);
       return true;
     } catch (e) {
-      fail(setStatus, "Save failed", e);
+      fail(setStatus, t("err_save"), e);
       return false;
+    } finally {
+      setBusy(null);
     }
-  }, []);
+  }, [t]);
 
   const textsRef = useRef(texts);
   textsRef.current = texts;
@@ -234,6 +250,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         window.clearTimeout(syncTimers.current[id]);
       }
       syncTimers.current = {};
+      setBusy("busy_saving");
       try {
         for (const [id, text] of Object.entries(textsRef.current)) {
           await api.setDocText(id, text);
@@ -245,18 +262,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setFolderMode(folder);
         return true;
       } catch (e) {
-        fail(setStatus, "Save failed", e);
+        fail(setStatus, t("err_save"), e);
         return false;
+      } finally {
+        setBusy(null);
       }
     },
-    [],
+    [t],
   );
 
   const doClose = useCallback(async () => {
     try {
       await api.closeProject();
     } catch (e) {
-      fail(setStatus, "Close failed", e);
+      fail(setStatus, t("err_close"), e);
       return;
     }
     setProject(null);
@@ -267,7 +286,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDirty(false);
     setHasPath(false);
     setPath(null);
-  }, []);
+  }, [t]);
 
   const setText = useCallback((id: string, text: string) => {
     setTexts((prev) => (prev[id] === text ? prev : { ...prev, [id]: text }));
@@ -288,9 +307,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       await api.setDocText(id, text);
     } catch (e) {
-      fail(setStatus, "Sync failed", e);
+      fail(setStatus, t("err_sync"), e);
     }
-  }, []);
+  }, [t]);
 
   // Autosave after 3 s idle (only when a save location exists).
   useEffect(() => {
@@ -340,12 +359,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const mutate = useCallback(
-    async (op: () => Promise<unknown>, errPrefix: string) => {
+    async (op: () => Promise<unknown>, errKey: string) => {
       try {
         await op();
         reconcileSelection(await refreshTree());
       } catch (e) {
-        fail(setStatus, errPrefix, e);
+        fail(setStatus, t(errKey), e);
         try {
           reconcileSelection(await refreshTree());
         } catch {
@@ -353,7 +372,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [reconcileSelection, refreshTree],
+    [reconcileSelection, refreshTree, t],
   );
 
   const createNode = useCallback(
@@ -383,7 +402,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               : prev,
           );
         },
-        "Rename failed",
+        "err_rename",
       );
     },
     [mutate],
@@ -391,53 +410,53 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const moveNode = useCallback(
     async (id: string, newParent: string, pos: number) => {
-      await mutate(() => api.moveNode(id, newParent, pos), "Move failed");
+      await mutate(() => api.moveNode(id, newParent, pos), "err_move");
     },
     [mutate],
   );
 
   const reorderNode = useCallback(
     async (id: string, up: boolean) => {
-      await mutate(() => api.reorderNode(id, up), "Reorder failed");
+      await mutate(() => api.reorderNode(id, up), "err_reorder");
     },
     [mutate],
   );
 
   const indentNode = useCallback(
     async (id: string) => {
-      await mutate(() => api.indentNode(id), "Indent failed");
+      await mutate(() => api.indentNode(id), "err_indent");
     },
     [mutate],
   );
 
   const outdentNode = useCallback(
     async (id: string) => {
-      await mutate(() => api.outdentNode(id), "Outdent failed");
+      await mutate(() => api.outdentNode(id), "err_outdent");
     },
     [mutate],
   );
 
   const trashNode = useCallback(
     async (id: string) => {
-      await mutate(() => api.trashNode(id), "Trash failed");
+      await mutate(() => api.trashNode(id), "err_trash");
     },
     [mutate],
   );
 
   const restoreNode = useCallback(
     async (id: string) => {
-      await mutate(() => api.restoreNode(id), "Restore failed");
+      await mutate(() => api.restoreNode(id), "err_restore");
     },
     [mutate],
   );
 
   const emptyTrash = useCallback(async () => {
-    await mutate(() => api.emptyTrash(), "Empty trash failed");
+    await mutate(() => api.emptyTrash(), "err_empty_trash");
   }, [mutate]);
 
   const deleteNode = useCallback(
     async (id: string) => {
-      await mutate(() => api.deleteNode(id), "Delete failed");
+      await mutate(() => api.deleteNode(id), "err_delete");
     },
     [mutate],
   );
@@ -453,10 +472,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
         setDirty(true);
       } catch (e) {
-        fail(setStatus, "Inspector save failed", e);
+        fail(setStatus, t("err_inspector"), e);
       }
     },
-    [],
+    [t],
   );
 
   const upsertCharacter = useCallback(async (sheet: CharacterSheet) => {
@@ -474,9 +493,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
       setDirty(true);
     } catch (e) {
-      fail(setStatus, "Sheet save failed", e);
+      fail(setStatus, t("err_sheet"), e);
     }
-  }, []);
+  }, [t]);
 
   const upsertLocation = useCallback(async (sheet: LocationSheet) => {
     try {
@@ -493,9 +512,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
       setDirty(true);
     } catch (e) {
-      fail(setStatus, "Sheet save failed", e);
+      fail(setStatus, t("err_sheet"), e);
     }
-  }, []);
+  }, [t]);
 
   const setTargets = useCallback(async (targets: Targets) => {
     try {
@@ -503,9 +522,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProject((prev) => (prev ? { ...prev, targets } : prev));
       setDirty(true);
     } catch (e) {
-      fail(setStatus, "Goals save failed", e);
+      fail(setStatus, t("err_goals"), e);
     }
-  }, []);
+  }, [t]);
 
   const adoptBackendText = useCallback(async (id: string) => {
     try {
@@ -514,9 +533,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTextRev((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
       setDirty(true);
     } catch (e) {
-      fail(setStatus, "Refresh failed", e);
+      fail(setStatus, t("err_refresh"), e);
     }
-  }, []);
+  }, [t]);
 
   const toggleCollapsed = useCallback((id: string) => {
     setCollapsed((prev) => {
@@ -560,6 +579,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     path,
     folderMode,
     status,
+    busy,
     expert,
     scrivenings,
     collapsed,

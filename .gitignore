@@ -3,18 +3,21 @@
 **/*.rs.bk
 *.pdb
 
-# NOTE: Cargo.lock is intentionally TRACKED (this workspace ships binaries:
-# apps/plotvale-cli, plus the Tauri shell at apps/plotvale-tauri/src-tauri).
-# Do not ignore it.
+# NOTE: Cargo.lock is intentionally TRACKED (one workspace, one lockfile:
+# core crates, Tauri shell, CLI, xtask). Do not ignore it.
 
-# Tauri / frontend (apps/plotvale-tauri)
+# Frontend (Vite + Tauri dev)
 node_modules/
-apps/plotvale-tauri/dist/
-apps/plotvale-tauri/src-tauri/target/
-apps/plotvale-tauri/src-tauri/gen/schemas/
+dist/
+dist-ssr/
+*.local
+logs/
+*.log
+npm-debug.log*
 
 # IDEs and editors
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 *.iml
 *.swp

@@ -41,18 +41,22 @@ are fixed rather than silenced.
 ## Workspace layout
 
 ```
+src/              React 19 + Vite frontend of the desktop app
+public/           static frontend assets
+src-tauri/        Rust shell: state, commands, window config
 crates/model/     data model: tree, documents, sheets, goals, word counting
 crates/project/   .plotvale reading/writing, atomic saves, backups, migrations
 crates/search/    full-text index, regex, saved queries
 crates/compile/   composition engine: selection -> sections -> blocks
 crates/export/    TXT/Markdown/HTML/DOCX/EPUB renderers
-apps/plotvale-tauri/          React 19 + Vite frontend of the desktop app
-apps/plotvale-tauri/src-tauri/  Rust shell: state, commands, window config
-apps/plotvale-cli/ the command line app
+cli/              the command line app
 xtask/            automation (translation parity check)
 locales/          interface strings (en.json, it.json)
 docs/             this documentation
 ```
+
+One Cargo workspace (`crates/*`, `src-tauri`, `cli`, `xtask`) with a single
+`Cargo.lock`; one `package.json` at the root for the frontend.
 
 ## Rules that are not negotiable
 
@@ -60,8 +64,8 @@ These come from `AGENTS.md` and exist to keep the project maintainable:
 
 - **The core must not depend on a GUI toolkit.** `model`, `project`, `search`, `compile`,
   and `export` have to stay testable without a GUI and compilable to WASM. Only the
-  Tauri shell (`apps/plotvale-tauri/src-tauri`) depends on them for display, and it is
-  excluded from the Cargo workspace precisely so the core stays GUI-free.
+  Tauri shell (`src-tauri`) depends on them for display; the dependency arrows
+  never point the other way.
 - **No `std::fs` in the core.** All filesystem access goes through `plotvale-project`,
   which is the single place that opens files.
 - **One composition engine.** `compile` turns a node selection into sections and blocks;

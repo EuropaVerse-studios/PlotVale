@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { useLocale } from "../lib/i18n";
 import { useStore } from "../lib/store";
+import { APP_VERSION } from "../lib/appinfo";
 
 function StatusBar() {
   const { t, lang } = useLocale();
@@ -12,6 +13,8 @@ function StatusBar() {
     return (
       <footer className="statusbar">
         <span>{t("status_no_project")}</span>
+        <span className="spacer" />
+        <span className="small dim">PlotVale v{APP_VERSION}</span>
       </footer>
     );
   }
@@ -44,6 +47,8 @@ function StatusBar() {
       )}
       <span className="sep">|</span>
       <span className="small">[{lang === "en" ? "EN" : "IT"}]</span>
+      <span className="sep">|</span>
+      <span className="small dim">v{APP_VERSION}</span>
     </footer>
   );
 }

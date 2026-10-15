@@ -34,16 +34,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/plotvale-tauri/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: Install
-        working-directory: apps/plotvale-tauri
         run: npm ci
       - name: Typecheck and bundle
-        working-directory: apps/plotvale-tauri
         run: npm run build
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - name: Tauri shell lint
-        working-directory: apps/plotvale-tauri/src-tauri
+        working-directory: src-tauri
         run: cargo clippy --lib -- -D warnings

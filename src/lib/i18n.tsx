@@ -5,8 +5,8 @@ import { createContext, useCallback, useContext, useState } from "react";
 import type { ReactNode } from "react";
 // Shared project locales (single source of truth; xtask checks EN/IT parity).
 // Vite `server.fs.allow` (see vite.config.ts) permits reading above the app.
-import en from "../../../../locales/en.json";
-import it from "../../../../locales/it.json";
+import en from "../../locales/en.json";
+import it from "../../locales/it.json";
 
 export type Lang = "en" | "it";
 
